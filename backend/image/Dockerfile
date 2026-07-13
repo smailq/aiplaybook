@@ -43,3 +43,11 @@ RUN chmod +x /etc/s6-overlay/s6-rc.d/gateway/run /opt/gateway/seed.sh \
 ENV HERMES_BIN=hermes
 
 EXPOSE 8787
+
+# The container's main program. Baked as an exec-form CMD (NOT overridden in
+# fly.toml) so the runtime execs `ENTRYPOINT + CMD` = `/init ... sleep infinity`
+# directly, keeping s6-overlay's /init as PID 1. Passing the command as a string
+# in fly.toml [processes] makes Fly shell-wrap it, which demotes /init below PID
+# 1 and trips "s6-overlay-suexec: fatal: can only run as pid 1". The gateway runs
+# as a supervised s6 sidecar; sleep infinity just keeps the machine alive.
+CMD ["sleep", "infinity"]

@@ -13,19 +13,18 @@ primary_region = "yyz"
   # working directory (the repo root), which is what the Dockerfile expects.
   dockerfile = "../backend/image/Dockerfile"
 
-# The container's main program. Phase 0 uses `hermes -z` per request from the
-# gateway, so the main program just keeps the machine alive; the gateway runs
-# as a supervised s6 sidecar. (Swap to `hermes serve` for the responsive-chat
-# upgrade - see docs/phase-0-plan.md.)
-[processes]
-  app = "sleep infinity"
+# NOTE: the container's main program (sleep infinity) is baked into the image as
+# an exec-form CMD (see backend/image/Dockerfile), NOT set here. Overriding it in
+# [processes] makes Fly shell-wrap the command, which demotes s6-overlay's /init
+# below PID 1 and crashes the boot ("can only run as pid 1"). With no [processes]
+# block, Fly runs the image ENTRYPOINT + CMD directly, so /init stays PID 1. This
+# app therefore uses the default process group, named "app".
 
 # Per-user persistent volume mounted at Hermes's HERMES_HOME. Holds SOUL.md,
 # the playbook, memory, and sessions - full isolation per user.
 [[mounts]]
   source = "data"
   destination = "/opt/data"
-  processes = ["app"]
 
 # The gateway (public :8787) is the only exposed port. Hermes stays on loopback.
 [http_service]
@@ -36,7 +35,6 @@ primary_region = "yyz"
   auto_stop_machines = "off"
   auto_start_machines = true
   min_machines_running = 1
-  processes = ["app"]
 
   # TEMP DEBUG: health check disabled so a failing /health does not restart-loop
   # the machine (the main process is `sleep infinity`, which keeps it up). This
