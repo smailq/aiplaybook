@@ -20,8 +20,12 @@ primary_region = "yyz"
 # machine: each container gets its own PID namespace, so the image's /init is
 # PID 1 inside it. `container` names which container in machine_config.json
 # `fly deploy` replaces with the image built from [build] above.
+#
+# NOTE: unlike [build].dockerfile (resolved relative to this fly.toml's dir),
+# machine_config is resolved relative to the WORKING DIRECTORY of `fly deploy`.
+# provision.sh runs it from the repo root, so this path is repo-root-relative.
 [experimental]
-  machine_config = "machine_config.json"
+  machine_config = "infra/machine_config.json"
   container = "app"
 
 # Per-user persistent volume mounted at Hermes's HERMES_HOME. Holds SOUL.md,
