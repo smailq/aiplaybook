@@ -31,19 +31,23 @@ primary_region = "yyz"
 [http_service]
   internal_port = 8787
   force_https = true
-  auto_stop_machines = "stop"
+  # TEMP DEBUG: auto_stop off so the machine stays up for `fly ssh console`.
+  # Restore to "stop" / min 0 once the gateway is confirmed healthy.
+  auto_stop_machines = "off"
   auto_start_machines = true
-  min_machines_running = 0
+  min_machines_running = 1
   processes = ["app"]
 
-  [[http_service.checks]]
-    interval = "30s"
-    timeout = "5s"
-    # Generous: the Hermes base image's first-boot init (uid remap, volume chown,
-    # config seeding) runs before the gateway starts serving.
-    grace_period = "40s"
-    method = "GET"
-    path = "/health"
+  # TEMP DEBUG: health check disabled so a failing /health does not restart-loop
+  # the machine (the main process is `sleep infinity`, which keeps it up). This
+  # lets us SSH in and see whether the gateway/s6 are actually running. Restore
+  # this block once diagnosed.
+  # [[http_service.checks]]
+  #   interval = "30s"
+  #   timeout = "5s"
+  #   grace_period = "40s"
+  #   method = "GET"
+  #   path = "/health"
 
 [[vm]]
   size = "shared-cpu-1x"
