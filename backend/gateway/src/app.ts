@@ -27,10 +27,17 @@ export function createApp({ config, jwks, hermes }: AppDeps): Hono<Env> {
   const app = new Hono<Env>();
   const issuer = `${config.supabaseUrl}/auth/v1`;
 
+  // FRONTEND_ORIGIN may be a comma-separated list (e.g. production + preview +
+  // a custom domain). Hono echoes the request origin when it is in the list.
+  const allowedOrigins = config.frontendOrigin
+    .split(",")
+    .map((o) => o.trim().replace(/\/+$/, "")) // tolerate trailing slashes
+    .filter(Boolean);
+
   app.use(
     "*",
     cors({
-      origin: config.frontendOrigin,
+      origin: allowedOrigins,
       allowMethods: ["GET", "POST", "OPTIONS"],
       allowHeaders: ["Authorization", "Content-Type"],
       maxAge: 600,
