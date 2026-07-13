@@ -21,6 +21,10 @@ primary_region = "yyz"
 # PID 1 inside it. `container` names which container in machine_config.json
 # `fly deploy` replaces with the image built from [build] above.
 #
+# infra/machine_config.json is GENERATED per-user by provision.sh (it carries the
+# per-user env, including the OpenRouter key, since Fly does not inject app
+# secrets into an explicitly-configured container) - see machine_config.example.json.
+#
 # NOTE: unlike [build].dockerfile (resolved relative to this fly.toml's dir),
 # machine_config is resolved relative to the WORKING DIRECTORY of `fly deploy`.
 # provision.sh runs it from the repo root, so this path is repo-root-relative.

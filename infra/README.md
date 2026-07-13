@@ -71,8 +71,12 @@ infra/provision.sh alice <supabase-user-id>
 shell wins over the file, so you can override ad hoc:
 `HERMES_MODEL=... infra/provision.sh alice <id>`.
 
-This creates `hermes-alice` on Fly (app + 3GB volume), sets the per-user secrets, deploys the image (Fly's remote builder builds `backend/image/Dockerfile`), and upserts the user's `backend_url` into Supabase.
+This creates `hermes-alice` on Fly (app + 3GB volume), generates `infra/machine_config.json` with the per-user config, deploys the image (Fly's remote builder builds `backend/image/Dockerfile`) as a multi-container machine, and upserts the user's `backend_url` into Supabase.
 The image self-seeds the persona (`SOUL.md`), knowledge, and the starter playbook into the volume on first boot.
+
+The backend runs as a **multi-container machine** so the Hermes image's s6-overlay init gets PID 1 in its own namespace (per Fly's Hermes blueprint).
+Because Fly does not inject app secrets into an explicitly-configured container, the gateway's config - including the OpenRouter key - is passed as the container's `env` in the generated (gitignored) `machine_config.json`.
+That key is therefore visible in the Fly machine config to the app owner; keep the OpenRouter spend cap on. (Hardening later: move the key to the volume's `config.yaml` via `hermes setup`.)
 
 ## 6. Verify end to end
 

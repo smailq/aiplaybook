@@ -102,15 +102,38 @@ else
   info "volume 'data' already exists, reusing"
 fi
 
-# 3. Secrets (per-user identity + provider key) --------------------------------
-info "setting secrets"
-fly secrets set --app "$APP" --stage \
-  HERMES_USER_ID="$USER_ID" \
-  SUPABASE_URL="$SUPABASE_URL" \
-  SUPABASE_JWKS_URL="$JWKS_URL" \
-  FRONTEND_ORIGIN="$FRONTEND_ORIGIN" \
-  OPENROUTER_API_KEY="$OPENROUTER_API_KEY" \
-  ${HERMES_MODEL:+HERMES_MODEL="$HERMES_MODEL"}
+# 3. Generate the machine config with the per-user env inlined -----------------
+# With an explicit machine_config.json, Fly does NOT auto-inject app secrets into
+# the container's environment (unlike a default single-process machine). So we
+# pass the gateway's config - and the OpenRouter key the agent needs - as the
+# container's own `env`. Values come from the env file + the user id; the
+# generated file is gitignored (it holds the OpenRouter key). fly deploy replaces
+# this container's image with the one built from backend/image/Dockerfile.
+command -v python3 >/dev/null 2>&1 || die "python3 is required to generate machine_config.json"
+info "generating $SCRIPT_DIR/machine_config.json"
+SUPABASE_URL="$SUPABASE_URL" \
+SUPABASE_JWKS_URL="$JWKS_URL" \
+HERMES_USER_ID="$USER_ID" \
+FRONTEND_ORIGIN="$FRONTEND_ORIGIN" \
+OPENROUTER_API_KEY="$OPENROUTER_API_KEY" \
+HERMES_MODEL="${HERMES_MODEL:-}" \
+python3 - "$SCRIPT_DIR/machine_config.json" <<'PY'
+import json, os, sys
+env = {k: os.environ[k] for k in (
+    "SUPABASE_URL", "SUPABASE_JWKS_URL", "HERMES_USER_ID",
+    "FRONTEND_ORIGIN", "OPENROUTER_API_KEY",
+)}
+if os.environ.get("HERMES_MODEL"):
+    env["HERMES_MODEL"] = os.environ["HERMES_MODEL"]
+cfg = {"containers": [{
+    "name": "app",
+    "image": "nousresearch/hermes-agent:latest",
+    "cmd": ["sleep", "infinity"],
+    "env": env,
+}]}
+with open(sys.argv[1], "w") as f:
+    f.write(json.dumps(cfg, indent=2) + "\n")
+PY
 
 # 4. Deploy the gateway+Hermes image (built by Fly's remote builder) -----------
 # --ha=false: one machine per user (no standby). The image is deployed as a

@@ -1,9 +1,0 @@
-{
-  "containers": [
-    {
-      "name": "app",
-      "image": "nousresearch/hermes-agent:latest",
-      "cmd": ["sleep", "infinity"]
-    }
-  ]
-}
