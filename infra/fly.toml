@@ -2,12 +2,16 @@
 #
 # One Fly app per user (`hermes-<slug>`), so the app name is set at deploy time
 # with `fly deploy -a hermes-<slug>` rather than hard-coded here. provision.sh
-# does that. Build context is the repo root (see backend/image/Dockerfile).
+# does that, running `fly deploy` from the repo root so the build context is the
+# repo root (the Dockerfile's COPY paths are repo-root-relative).
 
 primary_region = "iad"
 
 [build]
-  dockerfile = "backend/image/Dockerfile"
+  # flyctl resolves this path relative to THIS config file's directory (infra/),
+  # so it points up one level to backend/image/. The build context is still the
+  # working directory (the repo root), which is what the Dockerfile expects.
+  dockerfile = "../backend/image/Dockerfile"
 
 # The container's main program. Phase 0 uses `hermes -z` per request from the
 # gateway, so the main program just keeps the machine alive; the gateway runs
