@@ -1,0 +1,18 @@
+{
+  "_comment": "Example only. provision.sh generates the real infra/machine_config.json (gitignored): it fills in the per-user env (Fly does not inject app secrets into an explicitly-configured container) and points image at the tag it built and pushed, registry.fly.io/hermes-<slug>:latest.",
+  "containers": [
+    {
+      "name": "app",
+      "image": "registry.fly.io/hermes-YOUR-SLUG:latest",
+      "cmd": ["sleep", "infinity"],
+      "env": {
+        "SUPABASE_URL": "https://YOUR-PROJECT.supabase.co",
+        "SUPABASE_JWKS_URL": "https://YOUR-PROJECT.supabase.co/auth/v1/.well-known/jwks.json",
+        "HERMES_USER_ID": "<supabase user uuid>",
+        "FRONTEND_ORIGIN": "https://YOUR-APP.vercel.app",
+        "OPENROUTER_API_KEY": "sk-or-...",
+        "HERMES_MODEL": "nousresearch/hermes-3-llama-3.1-70b"
+      }
+    }
+  ]
+}

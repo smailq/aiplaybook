@@ -9,9 +9,14 @@
 # (see backend/image/seed.sh), so there is no separate volume-seeding step.
 #
 # Usage (run from the repo root):
+#   cp infra/.env.example infra/.env   # then fill it in
 #   infra/provision.sh <slug> <supabase-user-id>
 #
-# Required environment (see infra/README.md):
+# Config is read from an env file (default: infra/.env, override with ENV_FILE).
+# Any variable already set in the environment wins over the file, so you can
+# still override ad hoc, e.g.  HERMES_MODEL=... infra/provision.sh alice <id>
+#
+# Config keys (see infra/.env.example / infra/README.md):
 #   SUPABASE_URL                  https://<project>.supabase.co
 #   SUPABASE_SECRET_KEY           Supabase secret key (sb_secret_...); server-side only, never shipped to the browser
 #   FRONTEND_ORIGIN               deployed frontend origin, e.g. https://aiplaybook.vercel.app
@@ -26,11 +31,44 @@ set -euo pipefail
 die() { printf 'error: %s\n' "$*" >&2; exit 1; }
 info() { printf '==> %s\n' "$*" >&2; }
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
 [ $# -eq 2 ] || die "usage: infra/provision.sh <slug> <supabase-user-id>"
 SLUG="$1"
 USER_ID="$2"
 APP="hermes-$SLUG"
-REGION="${FLY_REGION:-iad}"
+
+# Load config from the env file. Assignments do NOT clobber variables already
+# present in the environment, so an inline override on the command line wins.
+ENV_FILE="${ENV_FILE:-$SCRIPT_DIR/.env}"
+if [ -f "$ENV_FILE" ]; then
+  info "loading config from $ENV_FILE"
+  while IFS= read -r line || [ -n "$line" ]; do
+    case "$line" in ''|'#'*) continue ;; esac
+    line="${line#export }"
+    key="${line%%=*}"
+    val="${line#*=}"
+    [ "$key" = "$line" ] && continue          # no '=' on this line, skip
+    key="$(printf '%s' "$key" | tr -d '[:space:]')"
+    [ -z "$key" ] && continue
+    # strip one layer of surrounding single or double quotes
+    case "$val" in
+      \"*\") val="${val#\"}"; val="${val%\"}" ;;
+      \'*\') val="${val#\'}"; val="${val%\'}" ;;
+    esac
+    # only set if not already exported (env precedence)
+    if [ -z "${!key+x}" ]; then
+      export "$key=$val"
+    fi
+  done < "$ENV_FILE"
+fi
+
+# Region: single source of truth is fly.toml's primary_region, so the volume and
+# the machine can never land in different regions (a machine can only mount a
+# volume in its own region). FLY_REGION overrides both if set.
+FLY_TOML="$SCRIPT_DIR/fly.toml"
+TOML_REGION="$(sed -n 's/^[[:space:]]*primary_region[[:space:]]*=[[:space:]]*"\{0,1\}\([a-z0-9]\{1,\}\)"\{0,1\}.*/\1/p' "$FLY_TOML" 2>/dev/null | head -1)"
+REGION="${FLY_REGION:-${TOML_REGION:-iad}}"
 
 case "$SLUG" in
   ''|*[!a-z0-9-]*) die "slug must be lowercase letters, digits, and dashes only" ;;
@@ -38,14 +76,14 @@ esac
 
 command -v fly >/dev/null 2>&1 || die "flyctl not found - install it and run 'fly auth login' (see infra/README.md)"
 
-: "${SUPABASE_URL:?set SUPABASE_URL}"
-: "${SUPABASE_SECRET_KEY:?set SUPABASE_SECRET_KEY}"
-: "${FRONTEND_ORIGIN:?set FRONTEND_ORIGIN}"
-: "${OPENROUTER_API_KEY:?set OPENROUTER_API_KEY}"
+: "${SUPABASE_URL:?set SUPABASE_URL (in $ENV_FILE)}"
+: "${SUPABASE_SECRET_KEY:?set SUPABASE_SECRET_KEY (in $ENV_FILE)}"
+: "${FRONTEND_ORIGIN:?set FRONTEND_ORIGIN (in $ENV_FILE)}"
+: "${OPENROUTER_API_KEY:?set OPENROUTER_API_KEY (in $ENV_FILE)}"
 SUPABASE_URL="${SUPABASE_URL%/}"
 JWKS_URL="${SUPABASE_JWKS_URL:-$SUPABASE_URL/auth/v1/.well-known/jwks.json}"
 
-REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+REPO_ROOT="$(dirname "$SCRIPT_DIR")"
 cd "$REPO_ROOT"
 
 # 1. App -----------------------------------------------------------------------
@@ -64,21 +102,56 @@ else
   info "volume 'data' already exists, reusing"
 fi
 
-# 3. Secrets (per-user identity + provider key) --------------------------------
-info "setting secrets"
-fly secrets set --app "$APP" --stage \
-  HERMES_USER_ID="$USER_ID" \
-  SUPABASE_URL="$SUPABASE_URL" \
-  SUPABASE_JWKS_URL="$JWKS_URL" \
-  FRONTEND_ORIGIN="$FRONTEND_ORIGIN" \
-  OPENROUTER_API_KEY="$OPENROUTER_API_KEY" \
-  ${HERMES_MODEL:+HERMES_MODEL="$HERMES_MODEL"}
+# 3. Build + push the image to a stable per-app tag ----------------------------
+# We reference this exact tag from machine_config.json below. This avoids fly
+# deploy's container-image *replacement* (container="app"), which 404s trying to
+# resolve its deployment-<id> tag when creating a multi-container machine.
+IMAGE="registry.fly.io/$APP:latest"
+info "building and pushing $IMAGE"
+fly deploy --app "$APP" --config infra/fly.toml --remote-only --build-only --push --image-label latest
 
-# 4. Deploy the gateway+Hermes image (built by Fly's remote builder) -----------
+# 4. Generate the machine config with the per-user env inlined -----------------
+# With an explicit machine_config.json, Fly does NOT auto-inject app secrets into
+# the container's environment (unlike a default single-process machine). So we
+# pass the gateway's config - and the OpenRouter key the agent needs - as the
+# container's own `env`. Values come from the env file + the user id; the
+# generated file is gitignored (it holds the OpenRouter key). The container
+# points directly at the image we just built and pushed.
+command -v python3 >/dev/null 2>&1 || die "python3 is required to generate machine_config.json"
+info "generating $SCRIPT_DIR/machine_config.json"
+APP_IMAGE="$IMAGE" \
+SUPABASE_URL="$SUPABASE_URL" \
+SUPABASE_JWKS_URL="$JWKS_URL" \
+HERMES_USER_ID="$USER_ID" \
+FRONTEND_ORIGIN="$FRONTEND_ORIGIN" \
+OPENROUTER_API_KEY="$OPENROUTER_API_KEY" \
+HERMES_MODEL="${HERMES_MODEL:-}" \
+python3 - "$SCRIPT_DIR/machine_config.json" <<'PY'
+import json, os, sys
+env = {k: os.environ[k] for k in (
+    "SUPABASE_URL", "SUPABASE_JWKS_URL", "HERMES_USER_ID",
+    "FRONTEND_ORIGIN", "OPENROUTER_API_KEY",
+)}
+if os.environ.get("HERMES_MODEL"):
+    env["HERMES_MODEL"] = os.environ["HERMES_MODEL"]
+cfg = {"containers": [{
+    "name": "app",
+    "image": os.environ["APP_IMAGE"],
+    "cmd": ["sleep", "infinity"],
+    "env": env,
+}]}
+with open(sys.argv[1], "w") as f:
+    f.write(json.dumps(cfg, indent=2) + "\n")
+PY
+
+# 5. Create/update the machine from the pre-built image + machine config --------
+# --image skips a rebuild and deploys the tag we pushed above; machine_config.json
+# defines the multi-container machine (so the Hermes image's s6-overlay /init gets
+# PID 1 in its own namespace). --ha=false: one machine per user.
 info "deploying $APP"
-fly deploy --app "$APP" --config infra/fly.toml --remote-only
+fly deploy --app "$APP" --config infra/fly.toml --image "$IMAGE" --ha=false
 
-# 5. Record the backend URL for the frontend (secret-key write bypasses RLS) ---
+# 6. Record the backend URL for the frontend (secret-key write bypasses RLS) ---
 BACKEND_URL="https://$APP.fly.dev"
 info "recording backend URL $BACKEND_URL in Supabase"
 HTTP_CODE=$(curl -sS -o /tmp/provision-upsert.json -w '%{http_code}' \

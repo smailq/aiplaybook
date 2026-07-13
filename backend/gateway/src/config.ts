@@ -10,6 +10,8 @@
 export interface Config {
   /** Public port the gateway listens on. */
   port: number;
+  /** Bind address. Defaults to "::" (dual-stack) so Fly's proxy can reach it over IPv6. */
+  host: string;
   /** Supabase project URL, e.g. https://abcd.supabase.co (used to build the JWT issuer). */
   supabaseUrl: string;
   /** JWKS endpoint that serves Supabase's public signing keys. */
@@ -47,6 +49,7 @@ export function loadConfig(): Config {
   const supabaseUrl = required("SUPABASE_URL").replace(/\/+$/, "");
   return {
     port: Number(optional("PORT", "8787")),
+    host: optional("HOST", "::"),
     supabaseUrl,
     supabaseJwksUrl: optional(
       "SUPABASE_JWKS_URL",

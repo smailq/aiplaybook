@@ -20,6 +20,8 @@ const hermes = createHermesRunner({
 
 const app = createApp({ config, jwks, hermes });
 
-serve({ fetch: app.fetch, port: config.port, hostname: "0.0.0.0" }, (info) => {
-  console.log(`[gateway] listening on :${info.port} for user ${config.hermesUserId}`);
+serve({ fetch: app.fetch, port: config.port, hostname: config.host }, (info) => {
+  console.log(
+    `[gateway] listening on ${config.host}:${info.port} for user ${config.hermesUserId}`,
+  );
 });

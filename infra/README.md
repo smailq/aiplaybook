@@ -57,21 +57,26 @@ Copy their **user id** (a UUID) - `provision.sh` needs it.
 
 ## 5. Provision that user's backend
 
-From the repo root, with the environment set:
+Put the config in an env file, then run the script. From the repo root:
 
 ```bash
-export SUPABASE_URL="https://<project>.supabase.co"
-export SUPABASE_SECRET_KEY="sb_secret_..."   # server-side only, never in the browser
-export FRONTEND_ORIGIN="https://<your-vercel-origin>"
-export OPENROUTER_API_KEY="<openrouter key>"
-# optional: pick an OpenRouter model for /ask, else the agent's config default is used
-export HERMES_MODEL="nousresearch/hermes-3-llama-3.1-70b"
-
+cp infra/.env.example infra/.env
+# edit infra/.env: SUPABASE_URL, SUPABASE_SECRET_KEY, FRONTEND_ORIGIN,
+#                  OPENROUTER_API_KEY (+ optional HERMES_MODEL, FLY_REGION)
 infra/provision.sh alice <supabase-user-id>
 ```
 
-This creates `hermes-alice` on Fly (app + 3GB volume), sets the per-user secrets, deploys the image (Fly's remote builder builds `backend/image/Dockerfile`), and upserts the user's `backend_url` into Supabase.
+`infra/.env` is gitignored - never commit it. The script reads it by default
+(override with `ENV_FILE=/path/to/env`), and any variable already set in your
+shell wins over the file, so you can override ad hoc:
+`HERMES_MODEL=... infra/provision.sh alice <id>`.
+
+This creates `hermes-alice` on Fly (app + 3GB volume), generates `infra/machine_config.json` with the per-user config, deploys the image (Fly's remote builder builds `backend/image/Dockerfile`) as a multi-container machine, and upserts the user's `backend_url` into Supabase.
 The image self-seeds the persona (`SOUL.md`), knowledge, and the starter playbook into the volume on first boot.
+
+The backend runs as a **multi-container machine** so the Hermes image's s6-overlay init gets PID 1 in its own namespace (per Fly's Hermes blueprint).
+Because Fly does not inject app secrets into an explicitly-configured container, the gateway's config - including the OpenRouter key - is passed as the container's `env` in the generated (gitignored) `machine_config.json`.
+That key is therefore visible in the Fly machine config to the app owner; keep the OpenRouter spend cap on. (Hardening later: move the key to the volume's `config.yaml` via `hermes setup`.)
 
 ## 6. Verify end to end
 

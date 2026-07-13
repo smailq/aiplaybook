@@ -68,6 +68,14 @@ function app() {
   return createApp({ config: makeConfig(), jwks, hermes: hermesStub });
 }
 
+function appWithOrigins(frontendOrigin: string) {
+  return createApp({
+    config: { ...makeConfig(), frontendOrigin },
+    jwks,
+    hermes: hermesStub,
+  });
+}
+
 beforeAll(async () => {
   const { publicKey, privateKey } = await generateKeyPair("ES256", {
     extractable: true,
@@ -80,6 +88,36 @@ beforeAll(async () => {
   await mkdir(join(playbookDir, "sub"), { recursive: true });
   await writeFile(join(playbookDir, "01-intro.md"), "# Intro\n\nHello.\n");
   await writeFile(join(playbookDir, "sub", "02-more.md"), "no heading here\n");
+});
+
+describe("CORS", () => {
+  it("allows each origin in a comma-separated list (tolerating trailing slashes)", async () => {
+    const a = appWithOrigins("https://a.example.com, https://b.example.com/");
+    for (const origin of ["https://a.example.com", "https://b.example.com"]) {
+      const res = await a.request("/playbook", {
+        method: "OPTIONS",
+        headers: {
+          Origin: origin,
+          "Access-Control-Request-Method": "GET",
+        },
+      });
+      expect(res.headers.get("access-control-allow-origin")).toBe(origin);
+    }
+  });
+
+  it("does not allow an origin outside the list", async () => {
+    const a = appWithOrigins("https://a.example.com");
+    const res = await a.request("/playbook", {
+      method: "OPTIONS",
+      headers: {
+        Origin: "https://evil.example.com",
+        "Access-Control-Request-Method": "GET",
+      },
+    });
+    expect(res.headers.get("access-control-allow-origin")).not.toBe(
+      "https://evil.example.com",
+    );
+  });
 });
 
 describe("GET /health", () => {

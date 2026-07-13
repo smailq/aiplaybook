@@ -2,43 +2,67 @@
 #
 # One Fly app per user (`hermes-<slug>`), so the app name is set at deploy time
 # with `fly deploy -a hermes-<slug>` rather than hard-coded here. provision.sh
-# does that. Build context is the repo root (see backend/image/Dockerfile).
+# does that, running `fly deploy` from the repo root so the build context is the
+# repo root (the Dockerfile's COPY paths are repo-root-relative).
 
-primary_region = "iad"
+primary_region = "yyz"
 
 [build]
-  dockerfile = "backend/image/Dockerfile"
+  # flyctl resolves this path relative to THIS config file's directory (infra/),
+  # so it points up one level to backend/image/. The build context is still the
+  # working directory (the repo root), which is what the Dockerfile expects.
+  dockerfile = "../backend/image/Dockerfile"
 
-# The container's main program. Phase 0 uses `hermes -z` per request from the
-# gateway, so the main program just keeps the machine alive; the gateway runs
-# as a supervised s6 sidecar. (Swap to `hermes serve` for the responsive-chat
-# upgrade - see docs/phase-0-plan.md.)
-[processes]
-  app = "sleep infinity"
+# The Hermes base image uses s6-overlay as its in-container supervisor, and
+# s6-overlay requires PID 1. On Fly, PID 1 belongs to the machine's own init, so
+# a plain single-process deploy fails with "s6-overlay-suexec: fatal: can only
+# run as pid 1". The fix (per Fly's Hermes blueprint) is a multi-container
+# machine: each container gets its own PID namespace, so the image's /init is
+# PID 1 inside it.
+#
+# infra/machine_config.json is GENERATED per-user by provision.sh: it carries the
+# per-user env (Fly does not inject app secrets into an explicitly-configured
+# container) AND points the "app" container directly at the image provision.sh
+# built and pushed (registry.fly.io/<app>:latest). We reference the image
+# directly rather than using fly deploy's container-image replacement, which
+# 404s resolving its deployment tag on multi-container machines. See
+# machine_config.example.json.
+#
+# NOTE: unlike [build].dockerfile (resolved relative to this fly.toml's dir),
+# machine_config is resolved relative to the WORKING DIRECTORY of `fly deploy`.
+# provision.sh runs it from the repo root, so this path is repo-root-relative.
+[experimental]
+  machine_config = "infra/machine_config.json"
 
 # Per-user persistent volume mounted at Hermes's HERMES_HOME. Holds SOUL.md,
 # the playbook, memory, and sessions - full isolation per user.
 [[mounts]]
   source = "data"
   destination = "/opt/data"
-  processes = ["app"]
 
 # The gateway (public :8787) is the only exposed port. Hermes stays on loopback.
 [http_service]
   internal_port = 8787
   force_https = true
-  auto_stop_machines = "stop"
+  # TEMP DEBUG: auto_stop off so the machine stays up for `fly ssh console`.
+  # Restore to "stop" / min 0 once the gateway is confirmed healthy.
+  auto_stop_machines = "off"
   auto_start_machines = true
-  min_machines_running = 0
-  processes = ["app"]
+  min_machines_running = 1
 
-  [[http_service.checks]]
-    interval = "30s"
-    timeout = "5s"
-    grace_period = "15s"
-    method = "GET"
-    path = "/health"
+  # TEMP DEBUG: health check disabled so a failing /health does not restart-loop
+  # the machine (the main process is `sleep infinity`, which keeps it up). This
+  # lets us SSH in and see whether the gateway/s6 are actually running. Restore
+  # this block once diagnosed.
+  # [[http_service.checks]]
+  #   interval = "30s"
+  #   timeout = "5s"
+  #   grace_period = "40s"
+  #   method = "GET"
+  #   path = "/health"
 
 [[vm]]
   size = "shared-cpu-1x"
-  memory = "1gb"
+  # Hermes bundles browser/media tooling; Fly's blueprint suggests up to 4gb.
+  # 2gb is a safe Phase 0 floor - bump if you see OOM in `fly logs`.
+  memory = "2gb"

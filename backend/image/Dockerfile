@@ -43,3 +43,11 @@ RUN chmod +x /etc/s6-overlay/s6-rc.d/gateway/run /opt/gateway/seed.sh \
 ENV HERMES_BIN=hermes
 
 EXPOSE 8787
+
+# The container's main program: keep the machine alive while the gateway runs as
+# a supervised s6 sidecar. The image ENTRYPOINT (inherited from the base image,
+# `/init ...`) is s6-overlay, which requires PID 1. On Fly, PID 1 belongs to
+# Fly's machine init, so this image must be deployed as a *container* of a
+# multi-container machine (infra/machine_config.json) to get its own PID
+# namespace - then /init is PID 1 there. See infra/fly.toml.
+CMD ["sleep", "infinity"]

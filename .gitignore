@@ -29,3 +29,7 @@ hermes-agents/
 
 # TypeScript incremental build cache
 *.tsbuildinfo
+
+# Generated per-user Fly machine config (contains the OpenRouter key + per-user
+# config). provision.sh writes it; commit machine_config.example.json instead.
+infra/machine_config.json
