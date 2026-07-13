@@ -1,0 +1,10 @@
+# Build context is the repo root. Exclude local artifacts and the frontend
+# (its own deploy target), but keep docs/ and infra/seed - the image bakes the
+# vertical persona + starter playbook from there.
+**/node_modules
+**/dist
+**/.next
+**/.git
+**/*.log
+**/.DS_Store
+web

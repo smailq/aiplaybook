@@ -10,7 +10,8 @@ Everything is transparent: all three co-author in the open, with the whole book 
 
 ## Status
 
-Greenfield. This repo currently holds the plans, the first vertical's content, and a local dev harness - **no application code yet**. Start from the Phase 0 plan.
+Phase 0 (the walking skeleton) is built: the Next.js + Supabase frontend (`web/`), the per-user auth gateway + Hermes image (`backend/`), and the provisioning + schema (`infra/`).
+To stand it up, follow `infra/README.md` (accounts, Supabase, and provisioning a user).
 
 ## Start here
 
@@ -30,9 +31,16 @@ tools/
   hermesctl                   local dev harness: run/seed Hermes agents in Apple `container`
                               (the reference for how the cloud backend provisions + seeds an agent)
 
-# to be built (see phase-0-plan.md):
-web/                          Next.js + Supabase frontend
-backend/                      the per-user Fly backend (auth gateway + Hermes server image)
+web/                          Next.js + Supabase frontend (magic-link login -> playbook + ask)
+backend/
+  gateway/                    auth gateway (Node + Hono + jose): verifies the Supabase JWT, proxies to Hermes
+  image/                      Dockerfile extending nousresearch/hermes-agent + s6 sidecar wiring + first-boot seed
+infra/
+  README.md                   the Phase 0 setup runbook (accounts + provisioning) - start here to deploy
+  supabase/schema.sql         user_backends table + RLS
+  provision.sh                stand up one per-user Fly backend
+  fly.toml                    shared Fly config for every per-user app
+  seed/playbook/              starter playbook baked into the image
 ```
 
 ## Phase 0 stack (the walking skeleton)
