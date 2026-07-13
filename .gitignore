@@ -1,0 +1,28 @@
+# dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# env / secrets - never commit
+.env
+.env.*
+!.env.example
+*.local
+
+# build output
+.next/
+dist/
+build/
+out/
+
+# fly
+.fly/
+
+# misc
+.DS_Store
+*.log
+.vscode/
+.idea/
+
+# local Hermes agent data (if hermesctl is run from here)
+hermes-agents/
