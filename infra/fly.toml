@@ -39,7 +39,9 @@ primary_region = "yyz"
   [[http_service.checks]]
     interval = "30s"
     timeout = "5s"
-    grace_period = "15s"
+    # Generous: the Hermes base image's first-boot init (uid remap, volume chown,
+    # config seeding) runs before the gateway starts serving.
+    grace_period = "40s"
     method = "GET"
     path = "/health"
 
