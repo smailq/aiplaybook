@@ -5,7 +5,7 @@
 # does that, running `fly deploy` from the repo root so the build context is the
 # repo root (the Dockerfile's COPY paths are repo-root-relative).
 
-primary_region = "iad"
+primary_region = "yyz"
 
 [build]
   # flyctl resolves this path relative to THIS config file's directory (infra/),

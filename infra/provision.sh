@@ -63,7 +63,12 @@ if [ -f "$ENV_FILE" ]; then
   done < "$ENV_FILE"
 fi
 
-REGION="${FLY_REGION:-iad}"
+# Region: single source of truth is fly.toml's primary_region, so the volume and
+# the machine can never land in different regions (a machine can only mount a
+# volume in its own region). FLY_REGION overrides both if set.
+FLY_TOML="$SCRIPT_DIR/fly.toml"
+TOML_REGION="$(sed -n 's/^[[:space:]]*primary_region[[:space:]]*=[[:space:]]*"\{0,1\}\([a-z0-9]\{1,\}\)"\{0,1\}.*/\1/p' "$FLY_TOML" 2>/dev/null | head -1)"
+REGION="${FLY_REGION:-${TOML_REGION:-iad}}"
 
 case "$SLUG" in
   ''|*[!a-z0-9-]*) die "slug must be lowercase letters, digits, and dashes only" ;;
