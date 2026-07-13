@@ -13,12 +13,16 @@ primary_region = "yyz"
   # working directory (the repo root), which is what the Dockerfile expects.
   dockerfile = "../backend/image/Dockerfile"
 
-# NOTE: the container's main program (sleep infinity) is baked into the image as
-# an exec-form CMD (see backend/image/Dockerfile), NOT set here. Overriding it in
-# [processes] makes Fly shell-wrap the command, which demotes s6-overlay's /init
-# below PID 1 and crashes the boot ("can only run as pid 1"). With no [processes]
-# block, Fly runs the image ENTRYPOINT + CMD directly, so /init stays PID 1. This
-# app therefore uses the default process group, named "app".
+# The Hermes base image uses s6-overlay as its in-container supervisor, and
+# s6-overlay requires PID 1. On Fly, PID 1 belongs to the machine's own init, so
+# a plain single-process deploy fails with "s6-overlay-suexec: fatal: can only
+# run as pid 1". The fix (per Fly's Hermes blueprint) is a multi-container
+# machine: each container gets its own PID namespace, so the image's /init is
+# PID 1 inside it. `container` names which container in machine_config.json
+# `fly deploy` replaces with the image built from [build] above.
+[experimental]
+  machine_config = "machine_config.json"
+  container = "app"
 
 # Per-user persistent volume mounted at Hermes's HERMES_HOME. Holds SOUL.md,
 # the playbook, memory, and sessions - full isolation per user.
@@ -49,4 +53,6 @@ primary_region = "yyz"
 
 [[vm]]
   size = "shared-cpu-1x"
-  memory = "1gb"
+  # Hermes bundles browser/media tooling; Fly's blueprint suggests up to 4gb.
+  # 2gb is a safe Phase 0 floor - bump if you see OOM in `fly logs`.
+  memory = "2gb"

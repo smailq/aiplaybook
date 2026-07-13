@@ -113,8 +113,11 @@ fly secrets set --app "$APP" --stage \
   ${HERMES_MODEL:+HERMES_MODEL="$HERMES_MODEL"}
 
 # 4. Deploy the gateway+Hermes image (built by Fly's remote builder) -----------
+# --ha=false: one machine per user (no standby). The image is deployed as a
+# multi-container machine (see infra/fly.toml + machine_config.json) so the
+# base image's s6-overlay /init gets PID 1 in its own namespace.
 info "deploying $APP"
-fly deploy --app "$APP" --config infra/fly.toml --remote-only
+fly deploy --app "$APP" --config infra/fly.toml --remote-only --ha=false
 
 # 5. Record the backend URL for the frontend (secret-key write bypasses RLS) ---
 BACKEND_URL="https://$APP.fly.dev"

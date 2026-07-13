@@ -44,10 +44,10 @@ ENV HERMES_BIN=hermes
 
 EXPOSE 8787
 
-# The container's main program. Baked as an exec-form CMD (NOT overridden in
-# fly.toml) so the runtime execs `ENTRYPOINT + CMD` = `/init ... sleep infinity`
-# directly, keeping s6-overlay's /init as PID 1. Passing the command as a string
-# in fly.toml [processes] makes Fly shell-wrap it, which demotes /init below PID
-# 1 and trips "s6-overlay-suexec: fatal: can only run as pid 1". The gateway runs
-# as a supervised s6 sidecar; sleep infinity just keeps the machine alive.
+# The container's main program: keep the machine alive while the gateway runs as
+# a supervised s6 sidecar. The image ENTRYPOINT (inherited from the base image,
+# `/init ...`) is s6-overlay, which requires PID 1. On Fly, PID 1 belongs to
+# Fly's machine init, so this image must be deployed as a *container* of a
+# multi-container machine (infra/machine_config.json) to get its own PID
+# namespace - then /init is PID 1 there. See infra/fly.toml.
 CMD ["sleep", "infinity"]
