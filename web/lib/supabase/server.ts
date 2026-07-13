@@ -7,9 +7,9 @@ import { supabaseEnv } from "./env";
  * callback route to exchange the auth code for a session and persist it.
  */
 export function createClient() {
-  const { url, anonKey } = supabaseEnv();
+  const { url, publishableKey } = supabaseEnv();
   const cookieStore = cookies();
-  return createServerClient(url, anonKey, {
+  return createServerClient(url, publishableKey, {
     cookies: {
       getAll() {
         return cookieStore.getAll();
