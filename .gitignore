@@ -26,3 +26,6 @@ out/
 
 # local Hermes agent data (if hermesctl is run from here)
 hermes-agents/
+
+# TypeScript incremental build cache
+*.tsbuildinfo

@@ -1,0 +1,28 @@
+#!/command/with-contenv sh
+# shellcheck shell=sh
+# AI Playbook auth gateway - supervised sidecar alongside the main hermes
+# program. This is the ONLY public surface of a user's backend: it verifies the
+# Supabase JWT, scopes it to this machine's user, and proxies to the loopback
+# hermes CLI. Hermes itself never binds a public port.
+#
+# with-contenv repopulates the environment (Fly secrets: SUPABASE_URL,
+# HERMES_USER_ID, FRONTEND_ORIGIN, ...) that /init scrubs before running a
+# service, exactly as main-wrapper.sh does for the main program.
+
+# Match the environment main-wrapper.sh sets up for `hermes` so the gateway's
+# `hermes -z` child finds its venv, binary, and data dir.
+export HOME=/opt/data
+export HERMES_HOME=/opt/data
+export PATH="/opt/hermes/.venv/bin:/opt/hermes/bin:${PATH}"
+
+cd /opt/gateway || exit 1
+
+# Drop to the unprivileged hermes user (uid 10000) so the gateway - and the
+# `hermes` process it spawns - run as the same user that owns /opt/data. The
+# first-boot seed runs as the same user so seeded files are owned correctly.
+if [ "$(id -u)" = 0 ]; then
+    s6-setuidgid hermes sh /opt/gateway/seed.sh || echo "[gateway] seed skipped"
+    exec s6-setuidgid hermes node dist/index.js
+fi
+sh /opt/gateway/seed.sh || echo "[gateway] seed skipped"
+exec node dist/index.js

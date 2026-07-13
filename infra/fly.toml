@@ -1,0 +1,44 @@
+# Shared Fly config for every per-user AI Playbook backend.
+#
+# One Fly app per user (`hermes-<slug>`), so the app name is set at deploy time
+# with `fly deploy -a hermes-<slug>` rather than hard-coded here. provision.sh
+# does that. Build context is the repo root (see backend/image/Dockerfile).
+
+primary_region = "iad"
+
+[build]
+  dockerfile = "backend/image/Dockerfile"
+
+# The container's main program. Phase 0 uses `hermes -z` per request from the
+# gateway, so the main program just keeps the machine alive; the gateway runs
+# as a supervised s6 sidecar. (Swap to `hermes serve` for the responsive-chat
+# upgrade - see docs/phase-0-plan.md.)
+[processes]
+  app = "sleep infinity"
+
+# Per-user persistent volume mounted at Hermes's HERMES_HOME. Holds SOUL.md,
+# the playbook, memory, and sessions - full isolation per user.
+[[mounts]]
+  source = "data"
+  destination = "/opt/data"
+  processes = ["app"]
+
+# The gateway (public :8787) is the only exposed port. Hermes stays on loopback.
+[http_service]
+  internal_port = 8787
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ["app"]
+
+  [[http_service.checks]]
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "15s"
+    method = "GET"
+    path = "/health"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "1gb"
