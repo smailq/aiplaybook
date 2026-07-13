@@ -102,15 +102,24 @@ else
   info "volume 'data' already exists, reusing"
 fi
 
-# 3. Generate the machine config with the per-user env inlined -----------------
+# 3. Build + push the image to a stable per-app tag ----------------------------
+# We reference this exact tag from machine_config.json below. This avoids fly
+# deploy's container-image *replacement* (container="app"), which 404s trying to
+# resolve its deployment-<id> tag when creating a multi-container machine.
+IMAGE="registry.fly.io/$APP:latest"
+info "building and pushing $IMAGE"
+fly deploy --app "$APP" --config infra/fly.toml --remote-only --build-only --push --image-label latest
+
+# 4. Generate the machine config with the per-user env inlined -----------------
 # With an explicit machine_config.json, Fly does NOT auto-inject app secrets into
 # the container's environment (unlike a default single-process machine). So we
 # pass the gateway's config - and the OpenRouter key the agent needs - as the
 # container's own `env`. Values come from the env file + the user id; the
-# generated file is gitignored (it holds the OpenRouter key). fly deploy replaces
-# this container's image with the one built from backend/image/Dockerfile.
+# generated file is gitignored (it holds the OpenRouter key). The container
+# points directly at the image we just built and pushed.
 command -v python3 >/dev/null 2>&1 || die "python3 is required to generate machine_config.json"
 info "generating $SCRIPT_DIR/machine_config.json"
+APP_IMAGE="$IMAGE" \
 SUPABASE_URL="$SUPABASE_URL" \
 SUPABASE_JWKS_URL="$JWKS_URL" \
 HERMES_USER_ID="$USER_ID" \
@@ -127,7 +136,7 @@ if os.environ.get("HERMES_MODEL"):
     env["HERMES_MODEL"] = os.environ["HERMES_MODEL"]
 cfg = {"containers": [{
     "name": "app",
-    "image": "nousresearch/hermes-agent:latest",
+    "image": os.environ["APP_IMAGE"],
     "cmd": ["sleep", "infinity"],
     "env": env,
 }]}
@@ -135,14 +144,14 @@ with open(sys.argv[1], "w") as f:
     f.write(json.dumps(cfg, indent=2) + "\n")
 PY
 
-# 4. Deploy the gateway+Hermes image (built by Fly's remote builder) -----------
-# --ha=false: one machine per user (no standby). The image is deployed as a
-# multi-container machine (see infra/fly.toml + machine_config.json) so the
-# base image's s6-overlay /init gets PID 1 in its own namespace.
+# 5. Create/update the machine from the pre-built image + machine config --------
+# --image skips a rebuild and deploys the tag we pushed above; machine_config.json
+# defines the multi-container machine (so the Hermes image's s6-overlay /init gets
+# PID 1 in its own namespace). --ha=false: one machine per user.
 info "deploying $APP"
-fly deploy --app "$APP" --config infra/fly.toml --remote-only --ha=false
+fly deploy --app "$APP" --config infra/fly.toml --image "$IMAGE" --ha=false
 
-# 5. Record the backend URL for the frontend (secret-key write bypasses RLS) ---
+# 6. Record the backend URL for the frontend (secret-key write bypasses RLS) ---
 BACKEND_URL="https://$APP.fly.dev"
 info "recording backend URL $BACKEND_URL in Supabase"
 HTTP_CODE=$(curl -sS -o /tmp/provision-upsert.json -w '%{http_code}' \

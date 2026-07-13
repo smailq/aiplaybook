@@ -18,19 +18,21 @@ primary_region = "yyz"
 # a plain single-process deploy fails with "s6-overlay-suexec: fatal: can only
 # run as pid 1". The fix (per Fly's Hermes blueprint) is a multi-container
 # machine: each container gets its own PID namespace, so the image's /init is
-# PID 1 inside it. `container` names which container in machine_config.json
-# `fly deploy` replaces with the image built from [build] above.
+# PID 1 inside it.
 #
-# infra/machine_config.json is GENERATED per-user by provision.sh (it carries the
-# per-user env, including the OpenRouter key, since Fly does not inject app
-# secrets into an explicitly-configured container) - see machine_config.example.json.
+# infra/machine_config.json is GENERATED per-user by provision.sh: it carries the
+# per-user env (Fly does not inject app secrets into an explicitly-configured
+# container) AND points the "app" container directly at the image provision.sh
+# built and pushed (registry.fly.io/<app>:latest). We reference the image
+# directly rather than using fly deploy's container-image replacement, which
+# 404s resolving its deployment tag on multi-container machines. See
+# machine_config.example.json.
 #
 # NOTE: unlike [build].dockerfile (resolved relative to this fly.toml's dir),
 # machine_config is resolved relative to the WORKING DIRECTORY of `fly deploy`.
 # provision.sh runs it from the repo root, so this path is repo-root-relative.
 [experimental]
   machine_config = "infra/machine_config.json"
-  container = "app"
 
 # Per-user persistent volume mounted at Hermes's HERMES_HOME. Holds SOUL.md,
 # the playbook, memory, and sessions - full isolation per user.

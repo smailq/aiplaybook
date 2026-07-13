@@ -1,9 +1,9 @@
 {
-  "_comment": "Example only. provision.sh generates the real infra/machine_config.json (gitignored) with the per-user env filled in. With an explicit machine_config, Fly does NOT auto-inject app secrets into the container, so the gateway's config is passed as the container's own env. fly deploy replaces this container's image (via [experimental] container=\"app\" in fly.toml) with the one built from backend/image/Dockerfile.",
+  "_comment": "Example only. provision.sh generates the real infra/machine_config.json (gitignored): it fills in the per-user env (Fly does not inject app secrets into an explicitly-configured container) and points image at the tag it built and pushed, registry.fly.io/hermes-<slug>:latest.",
   "containers": [
     {
       "name": "app",
-      "image": "nousresearch/hermes-agent:latest",
+      "image": "registry.fly.io/hermes-YOUR-SLUG:latest",
       "cmd": ["sleep", "infinity"],
       "env": {
         "SUPABASE_URL": "https://YOUR-PROJECT.supabase.co",
