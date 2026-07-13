@@ -3,10 +3,10 @@
 A cloud-hosted SaaS that gives each customer a **living playbook** for their business - a book they follow to grow, co-authored by three parties:
 
 - **An AI agent (the author)** researches, plans, and writes the chapters at machine scale.
-- **A human expert (the chief editor)** reviews, edits, and approves; nothing reaches the reader unedited.
-- **The customer (an active participant)** follows the plays, reports results, and gives feedback, which becomes source material for the next edition.
+- **A human expert (the guide)** edits the book and gives direction to both the AI and the customer - a collaborator working in the open, not an approval gate.
+- **The customer (an active participant)** follows the plays, reports results, and gives feedback, which becomes source material for the next revision.
 
-The book is **living**: each learn-plan-act-measure-revise cycle publishes a new **edition**. The platform is vertical-first (marketing is the first vertical) and the agent is a hosted [Hermes](https://github.com/nousresearch/hermes-agent) agent under the hood.
+Everything is transparent: all three co-author in the open, with the whole book visible to everyone. The book is **living** and improves granularly - each learn-plan-act-measure-revise cycle revises specific pages or sections (each independently versioned, like software releases), not the whole book at once. The app should **feel like a real, designed book** - not a set of markdown files (detailed UI/UX comes later). The platform is vertical-first (marketing is the first vertical), and the agent is a hosted [Hermes](https://github.com/nousresearch/hermes-agent) agent under the hood.
 
 ## Status
 

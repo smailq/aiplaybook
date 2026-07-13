@@ -3,7 +3,7 @@
 > A proposal for turning the Hermes-agent setup into a cloud-hosted, paid product.
 > Decisions this plan is built on (chosen by the founder):
 > cloud-hosted agents, a vertical-first platform (marketing first, more verticals later), bundled/resold inference with usage billing, and a web-app surface.
-> The product is experienced as a **living playbook**: a book the customer follows, co-authored by an AI author, a human chief editor, and the customer, and evolving through editions.
+> The product is experienced as a **living playbook**: a shared book the customer follows, co-authored in the open by an AI author, a human expert (guide), and the customer, and revised continuously at the page and section level.
 > This document was updated for the playbook framing at plan-altitude; detailed implementation follows later.
 
 ## 1. Product: a living, co-authored playbook
@@ -12,16 +12,20 @@ A customer signs up on a web app, answers a few setup questions for their vertic
 Under the hood it is a hosted AI agent that learns their business from web research, plans an evidence-based roadmap, and drafts the work.
 To the customer, that work is presented as a book they read and act on, not a chatbot.
 
-The playbook is **co-authored by three parties**:
+The playbook is **co-authored, in the open, by three parties**:
 
 - **The AI agent is the author.** It researches, plans, and writes the chapters at machine scale.
-- **A human expert is the chief editor.** They review, edit, and approve what the author writes; nothing reaches the reader unedited.
-- **The customer is an active participant.** They follow the playbook, report results, and leave feedback, and those contributions become source material for the next edition.
+- **A human expert is the guide.** An experienced practitioner who edits the book and gives direction to both the author and the customer - a collaborator working alongside, not an approval gate.
+- **The customer is an active participant.** They follow the plays, report results, and give feedback, and they edit the book too; their contributions become source material for the next edition.
 
-The book is **living**: each learn-plan-act-measure-revise cycle publishes a new **edition**, so the playbook sharpens as the business executes against it.
+Everything is transparent: all three see the whole book and each other's contributions as they happen, and they work on it together rather than handing off through gates.
+
+The book is **living** and improves at a granular level: a learn-plan-act-measure-revise cycle rarely rewrites the whole book - it revises specific pages or sections, and each page or section carries its own version history (release versions, in software terms). So the playbook sharpens continuously and incrementally as the business executes against it.
+
+The experience should **feel like a real book** - a rich, designed reading-and-working surface, not a raw list of markdown files. Markdown may be the substrate the author and tools write, but the customer experiences a book; the detailed book UI/UX is defined later.
 
 We host and run each agent, meter and resell the inference, and bill a subscription plus usage.
-The strategic asset we own is the **vertical knowhow**: the persona, the knowledge brief, the skills, the onboarding questions, the integrations, and the editorial guardrails that make a playbook good at a specific job.
+The strategic asset we own is the **vertical knowhow**: the persona, the knowledge brief, the skills, the onboarding questions, the integrations, and the quality and voice guardrails that make a playbook good at a specific job.
 The platform is the delivery vehicle; the verticals are the product; the playbook is how it is experienced.
 
 ## 2. Why the pieces are shaped this way
@@ -29,8 +33,8 @@ The platform is the delivery vehicle; the verticals are the product; the playboo
 - **Cloud-hosted** because the agent must work when the customer's laptop is closed: scheduled research, always-on inboxes/webhooks, and a persistent memory that deepens over time.
   Apple `container` is macOS-only, so production runs the same `nousresearch/hermes-agent` Docker image on Linux; `hermesctl` remains our local dev harness and the reference for how provisioning seeds an agent.
 - **Vertical-first, platform-underneath** because starting narrow (marketing) sells better and is easier to make genuinely good, while a bundle abstraction keeps vertical #2 a configuration exercise rather than a rewrite.
-- **Human-in-the-loop as editorial** because it is both the quality bar and the near-term moat: the agent authors, the chief editor edits and approves, and that editorial review is a core product surface, not glue.
-- **The playbook surface** because a book the customer co-authors and follows is far harder to commoditize than "another AI chat agent," and the three-way authorship (author, editor, reader) is the felt product.
+- **Human expert in the open** because it is both the quality bar and the near-term moat: the agent authors, the expert edits and guides alongside both the author and the customer, and that live collaboration (not a review gate) is a core product surface.
+- **The playbook surface** because a book the customer co-authors and follows is far harder to commoditize than "another AI chat agent," and the three-way authorship (author, expert, reader) is the felt product.
 - **Bundled inference** because it raises perceived value and margin, but it forces a metering seam: every token an agent spends must be attributed to a tenant, capped, and billed, or a single runaway loop erases the margin.
 
 ## 3. Architecture overview
@@ -38,12 +42,12 @@ The platform is the delivery vehicle; the verticals are the product; the playboo
 ```
                          ┌──────────────────────────────────────────────┐
         Customer  ─────▶ │  PLAYBOOK APP (Next.js · book UI)             │
-        (reader &        │   the living book: chapters + editions        │
+        (reader &        │   the living book: chapters + sections        │
          co-author)      │   onboarding wizard · results/feedback margins│
                          │   Stripe checkout · usage view                │
                          └───────────────┬──────────────────────────────┘
-        Chief editor ──▶ │  EDITORIAL CONSOLE (role-gated, same app)     │
-        (human expert)   │   edit · annotate · approve · publish edition │
+        Human expert ──▶ │  EXPERT WORKSPACE (shared, in the open)       │
+        (the guide)      │   edit · annotate · guide author + customer   │
                          └───────────────┬──────────────────────────────┘
                                          │  authenticated API
                                          ▼
@@ -66,7 +70,7 @@ The platform is the delivery vehicle; the verticals are the product; the playboo
                                         Stripe (subscription + metered)
 ```
 
-The agent runtime is the author, the editorial console is the chief editor, and the customer contributes results and feedback through the book UI - all three write into the same living playbook.
+The agent runtime is the author, the expert works in a shared workspace as the guide, and the customer contributes results and feedback through the book UI - all three write into the same living playbook, in the open.
 
 The agent never talks to a model provider directly.
 It is configured to call our LLM proxy with a per-tenant key, so all spend is attributed, capped, and billable at one seam.
@@ -112,17 +116,17 @@ The brain. Responsibilities:
 - Model tiering for COGS: route routine steps (drafting, parsing) to cheaper models and reserve premium models for synthesis; this is the main lever on gross margin.
 - Optionally layer Nous Portal's Tool Gateway (web search, image gen, TTS, cloud browser) for tool features, still metered through us.
 
-### 4.5 Playbook app (onboarding + book UI + editorial console)
+### 4.5 Playbook app (onboarding + book UI + expert workspace)
 
 - Public marketing site plus the signed-in app.
 - **Onboarding wizard** (the "few setup questions"): pick vertical, answer 5-7 vertical questions, choose a plan, provision.
   For marketing the questions are: product name and URL, who it is for, the primary goal/north-star, brand voice, current channels, and known competitors.
   The magic-moment: onboarding kicks off an author research pass over the customer's URL to draft the playbook's first edition, so the book arrives already written.
 - **The book UI (the customer's primary surface)**: the living playbook rendered as a book - front matter, chapters (Situation, Strategy, Roadmap, Plays, Results, Appendix/evidence), a table of contents, and edition history on the spine.
-  Every section carries an editorial state (drafting -> in review -> published -> superseded), and editor changes show as margin notes / tracked edits, so it reads as a real evolving book rather than a chat log.
+  Every page or section is live and independently versioned (draft -> current -> superseded, its own release versions), and each contributor's edits show as tracked changes visible to everyone. The whole app should feel like a real, designed book - not a raw list of markdown files; the detailed book UI/UX is defined later.
 - **Reader participation**: the customer follows the plays, reports results, and leaves feedback in the margins; those contributions are captured as source material and trigger the next edition.
-- **Editorial console (chief editor, role-gated)**: the human expert reviews and edits the author's chapters before they publish, annotates, approves, and cuts a new edition.
-  The agent authors in advisor mode (it drafts; the editor publishes), so nothing reaches the reader unedited.
+- **Expert workspace (the guide, role-gated)**: the human expert works in the same book alongside the author and the customer - editing chapters, annotating, and giving direction to both - in the open, not as a pre-publication gate, and can revise any page or section, each of which is independently versioned.
+  Nothing sits in a hidden review queue; all three see the whole book and each other's changes as they happen.
 - Chat with the author still exists, but the book is the durable artifact and the primary surface.
 
 ### 4.6 Vertical bundle (the productized knowhow)
@@ -141,16 +145,16 @@ Adding a vertical is authoring a new bundle, not changing the platform.
 
 ### 4.7 Data model (control-plane database, sketch)
 
-- `orgs`, `users`, `memberships(role: customer_admin | editor | staff)`.
+- `orgs`, `users`, `memberships(role: customer_admin | expert | staff)`.
 - `verticals(id, name, bundle_version)`.
 - `agents(id, org_id, vertical_id, machine_id, volume_id, status, model_routing, created_at)` - the AI author's runtime.
-- `playbooks(id, agent_id, vertical_id, current_edition_id)` - one living book per customer.
-- `editions(id, playbook_id, number, status: draft|published, published_at)`.
-- `sections(id, edition_id, chapter, editorial_state: drafting|in_review|published|superseded, body, order)`.
-- `contributions(id, section_id, author_kind: agent|editor|customer, type: draft|edit|annotation|result|feedback, payload, created_at)` - the three-way authorship trail (author drafts, editor edits, reader results/feedback).
+- `playbooks(id, agent_id, vertical_id)` - one living book per customer.
+- `sections(id, playbook_id, chapter, order, current_version_id)` - the book's pages/sections (its structure).
+- `section_versions(id, section_id, version_no, status: draft|current|superseded, body, created_at)` - each page/section is independently versioned (its own release versions); a revise cycle bumps only the sections it touches, not the whole book.
+- `contributions(id, section_version_id, author_kind: agent|expert|customer, type: draft|edit|annotation|guidance|result|feedback, payload, created_at)` - the three-way authorship trail, all visible to everyone (author drafts, expert edits and guides, customer results and feedback).
 - `onboarding_answers(agent_id, jsonb)`.
 - `subscriptions` (Stripe), `usage_records(tenant, period, tokens, cost)`.
-- `editor_assignments(editor_user_id, playbook_id_or_org_id)`, and `messages` (chat with the author).
+- `expert_assignments(expert_user_id, playbook_id_or_org_id)`, and `messages` (chat with the author).
 - Secrets (per-tenant proxy key, integration creds) live in a secrets manager, not the app DB.
 
 ## 5. Tech stack (recommended)
@@ -188,18 +192,18 @@ The detailed Phase 0 (`phase-0-plan.md`) expands this into a thin walking skelet
 - Next.js app: signup -> marketing onboarding wizard (5-7 Qs) -> Stripe checkout -> provisioning -> the playbook's first edition rendered in the book UI.
 - Provisioning worker (Inngest): create Machine + Volume, render the marketing bundle + answers, seed, start, health-check, and the onboarding research pass that drafts the first edition.
 - LiteLLM proxy with per-tenant keys, budgets, and usage export -> Stripe metered billing.
-- Book UI v1: the living playbook as a book (chapters + editorial states + edition history), with reader results/feedback captured in the margins.
-- Editorial console v1: role-gated chief-editor views to edit, annotate, approve, and publish an edition; advisor-mode gating so nothing publishes unedited.
+- Book UI v1: the living playbook that feels like a book (chapters + per-page/section version history), visible to all, with reader results/feedback captured inline. (Rich book UI/UX comes later; v1 is functional.)
+- Expert workspace v1: role-gated views for the expert to edit, annotate, and guide the author and customer in the same book, revising pages or sections (each independently versioned); a shared, transparent surface, not an approval gate.
 - Control-plane scheduling: a weekly research/revise run per agent that drafts the next edition (wake -> run -> stop).
 - Guardrails: spend caps, rate limits, auto-pause, and an admin kill switch.
 
-Exit criterion: a stranger can sign up, pay, answer the questions, and get a working, metered, editor-reviewed marketing playbook.
+Exit criterion: a stranger can sign up, pay, answer the questions, and get a working, metered marketing playbook they co-author openly with the AI and a human expert.
 
 ### Phase 2 - Vertical platform and depth
 
 - Extract the bundle abstraction so onboarding, SOUL, skills, toolset, and guardrails are data-driven; author vertical #2 as config.
 - Marketing integrations via Hermes skills/MCP (analytics, email/ESP, social, CMS).
-- Richer expert workflows: assignment, review queues, SLAs, audit trail, and templated approvals.
+- Richer expert workflows: assignment, a shared work queue, engagement cadence, audit trail, and reusable guidance templates.
 - Usage dashboards, tiered plans, per-plan quotas, and overage.
 
 ### Phase 3 - Scale and trust
@@ -210,17 +214,17 @@ Exit criterion: a stranger can sign up, pay, answer the questions, and get a wor
 
 ## 7. Pricing model (sketch)
 
-- Tiered subscription (Starter / Pro / Team) bundling platform access, a set of chief-editor hours, and included monthly usage.
+- Tiered subscription (Starter / Pro / Team) bundling platform access, a set of expert (human guide) hours, and included monthly usage.
 - Metered overage on inference beyond the included allotment (tokens or "credits").
-- Editorial (chief-editor) hours as a separate lever, since the human-in-the-loop cost is as real as compute.
+- Expert (human guide) hours as a separate lever, since the human-in-the-loop cost is as real as compute.
 - Annual plans for cash flow; a time-boxed trial with a hard spend cap rather than an open-ended free tier (bundled inference makes a generous free tier dangerous).
 
 ## 8. Unit economics and the two costs to watch
 
 - **Inference COGS** is controlled at the proxy: per-tenant budgets, model tiering, and auto-pause.
   Instrument gross margin per tenant from day one; a bundled-inference business dies quietly if a few power users or a looping agent run unmetered.
-- **Chief-editor time** is the other real cost.
-  Define editor capacity per customer and an edition-turnaround SLA, and price so the included editor hours stay profitable; the author's job is to raise how many playbooks one editor can keep current.
+- **Expert time** is the other real cost.
+  Define expert capacity per customer and an engagement cadence, and price so the included expert hours stay profitable; the author's job is to raise how many playbooks one expert can guide.
 
 ## 9. Key risks and how the plan addresses them
 
@@ -228,7 +232,7 @@ Exit criterion: a stranger can sign up, pay, answer the questions, and get a wor
 - **Heavy image, slow cold starts** - accept a warm agent in MVP, then a keep-warm pool or slimmer image in Phase 3.
 - **Hermes upgrade churn** - pin image versions and test each vertical bundle against a new image before rollout.
 - **Dashboard/API exposure** - never expose Hermes's own dashboard/API publicly; always front it with our authenticated proxy, and isolate tenants by container, volume, and network.
-- **Editorial capacity scaling** - treat chief-editor capacity and an edition-turnaround SLA as first-class product and pricing constraints; the author's job is to raise how many playbooks one editor can keep current.
+- **Expert capacity scaling** - treat human-expert capacity and an engagement cadence as first-class product and pricing constraints; the author's job is to raise how many playbooks one expert can guide.
 - **Compliance for B2B** - per-tenant isolation, a secrets manager, a DPA, and a privacy policy before selling to companies that ask.
 
 ## 10. Licensing and compliance
@@ -249,5 +253,5 @@ Not legal advice: have counsel review the trademark, dependency, and (if we touc
 
 - The per-agent isolation model, seeding mechanism, and lifecycle commands (`hermesctl`) are the local reference for server-side provisioning; the same `SOUL.md` + `knowledge/` + volume mechanics apply on Fly.
 - The marketing vertical's persona and knowledge brief are already drafted (`docs/hermes-marketing-agent-prompt.md`, `docs/awareness3-product-brief.md`) - they become the first vertical bundle.
-  Follow-up (detailed implementation): reframe that operating prompt so the agent authors the playbook (chapters + editions) and submits chapters to the chief editor for review, rather than emitting freeform proposals.
+  Follow-up (detailed implementation): reframe that operating prompt so the agent authors the playbook (chapters + per-section versions) openly, alongside the human expert and the customer, rather than emitting freeform proposals.
 - The `awareness3` codebase already uses Next.js + Supabase + Stripe-adjacent patterns, so the web app stack is familiar to the team.

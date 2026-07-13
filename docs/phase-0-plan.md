@@ -11,7 +11,7 @@
 - The **frontend reads a user's data from that user's backend** over an authenticated call.
 - Inference runs through **OpenRouter directly** - no proxy and no metering, since there are only one or two testers; cost risk is capped by a credit limit on the OpenRouter key.
 
-Non-goals for Phase 0 (deferred to Phase 1): self-serve provisioning, Stripe, the LLM-proxy and metering (Hermes talks to OpenRouter directly here), the editorial console, multi-edition book UI, and the vertical-bundle abstraction.
+Non-goals for Phase 0 (deferred to Phase 1): self-serve provisioning, Stripe, the LLM-proxy and metering (Hermes talks to OpenRouter directly here), the expert workspace, the rich book UI/UX, and the vertical-bundle abstraction.
 
 ## 2. Architecture
 

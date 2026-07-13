@@ -4,7 +4,7 @@ Guidance for coding agents implementing this project. Read this, then `docs/phas
 
 ## What this is
 
-AI Playbook is a cloud-hosted SaaS. Each customer gets a **living playbook** - a book they follow to grow - co-authored by an AI agent (the author), a human expert (the chief editor), and the customer (an active participant who reports results and gives feedback). The book evolves through **editions**. The platform is vertical-first (marketing is the first vertical); under the hood each agent is a hosted [Hermes](https://github.com/nousresearch/hermes-agent) agent.
+AI Playbook is a cloud-hosted SaaS. Each customer gets a **living playbook** - a book they follow to grow - co-authored, in the open, by an AI agent (the author), a human expert (a guide who edits and gives direction to both the AI and the customer - not a gate), and the customer (an active participant who reports results and gives feedback). Everything is transparent and the book improves granularly: each page or section is independently versioned (like software releases), not the whole book at once. The app should **feel like a real book**, not a set of markdown files (detailed book UI/UX defined later). The platform is vertical-first (marketing is the first vertical); under the hood each agent is a hosted [Hermes](https://github.com/nousresearch/hermes-agent) agent.
 
 Full product + architecture: `docs/saas-implementation-plan.md`.
 
@@ -12,7 +12,7 @@ Full product + architecture: `docs/saas-implementation-plan.md`.
 
 Greenfield: only docs, the first vertical's content, and a local dev harness (`tools/hermesctl`) exist. **No app code yet.**
 
-The immediate build target is **Phase 0**, a thin walking skeleton, specified in `docs/phase-0-plan.md`. Build that first, end to end, before anything else. Do not build metering, Stripe, the editorial console, or the vertical-bundle abstraction yet - those are later phases.
+The immediate build target is **Phase 0**, a thin walking skeleton, specified in `docs/phase-0-plan.md`. Build that first, end to end, before anything else. Do not build metering, Stripe, the expert workspace, or the vertical-bundle abstraction yet - those are later phases.
 
 Phase 0 in one line: a user logs in with Supabase, the Next.js UI calls that user's own Fly-hosted Hermes backend, and the backend verifies the Supabase JWT before returning the user's data.
 
