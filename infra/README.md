@@ -9,7 +9,7 @@ Sign up for these (all have free tiers that cover Phase 0):
 
 | Service | Why | What to grab |
 | --- | --- | --- |
-| [Supabase](https://supabase.com) | Auth (magic links) + Postgres (`user_backends`) | project URL, anon key, service-role key, JWKS URL |
+| [Supabase](https://supabase.com) | Auth (magic links) + Postgres (`user_backends`) | project URL, publishable key, secret key, JWKS URL |
 | [Fly.io](https://fly.io) | One per-user backend machine + volume | nothing yet - you deploy via CLI |
 | [OpenRouter](https://openrouter.ai) | Inference for the agent | API key, and set a credit cap |
 | [Vercel](https://vercel.com) | Hosts the Next.js frontend | nothing yet - you deploy via CLI/Git |
@@ -25,7 +25,7 @@ npm i -g vercel && vercel login
 
 ## 1. Supabase
 
-1. Create a project. From **Project Settings -> API**, copy the **Project URL**, the **anon public** key, and the **service_role** key.
+1. Create a project. From **Project Settings -> API Keys**, copy the **publishable** key (`sb_publishable_...`) and create/copy a **secret** key (`sb_secret_...`). From **Project Settings -> API**, copy the **Project URL**. (Publishable/secret are Supabase's current API keys; they replace the legacy `anon` / `service_role` JWTs. The publishable key is browser-safe; the secret key is server-side only and bypasses RLS.)
 2. **Auth -> Providers -> Email**: enable it and turn on **magic links** (email OTP).
 3. **Auth -> URL Configuration**: set the **Site URL** to your frontend origin (e.g. `https://aiplaybook.vercel.app`) and add `https://<origin>/auth/callback` to the **Redirect URLs**. Add `http://localhost:3000/**` too if you will run the frontend locally.
 4. **Auth -> JWT signing keys**: rotate to an **asymmetric** key (ECC/RSA). This makes the public JWKS endpoint serve a verify-only key, so no signing secret ever lands on a backend. The JWKS URL is `https://<project>.supabase.co/auth/v1/.well-known/jwks.json`.
@@ -42,7 +42,7 @@ Deploy `web/` to Vercel with these environment variables (both are public/browse
 
 ```
 NEXT_PUBLIC_SUPABASE_URL=https://<project>.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon public key>
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<publishable key, sb_publishable_...>
 ```
 
 Either import the repo in the Vercel dashboard (set the **root directory** to `web`) or run `vercel` from `web/`.
@@ -61,7 +61,7 @@ From the repo root, with the environment set:
 
 ```bash
 export SUPABASE_URL="https://<project>.supabase.co"
-export SUPABASE_SERVICE_ROLE_KEY="<service-role key>"   # server-side only, never in the browser
+export SUPABASE_SECRET_KEY="sb_secret_..."   # server-side only, never in the browser
 export FRONTEND_ORIGIN="https://<your-vercel-origin>"
 export OPENROUTER_API_KEY="<openrouter key>"
 # optional: pick an OpenRouter model for /ask, else the agent's config default is used

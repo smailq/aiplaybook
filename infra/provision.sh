@@ -13,7 +13,7 @@
 #
 # Required environment (see infra/README.md):
 #   SUPABASE_URL                  https://<project>.supabase.co
-#   SUPABASE_SERVICE_ROLE_KEY     service-role key (server-side only; never shipped to the browser)
+#   SUPABASE_SECRET_KEY           Supabase secret key (sb_secret_...); server-side only, never shipped to the browser
 #   FRONTEND_ORIGIN               deployed frontend origin, e.g. https://aiplaybook.vercel.app
 #   OPENROUTER_API_KEY            OpenRouter key with a credit cap set in the dashboard
 # Optional:
@@ -39,7 +39,7 @@ esac
 command -v fly >/dev/null 2>&1 || die "flyctl not found - install it and run 'fly auth login' (see infra/README.md)"
 
 : "${SUPABASE_URL:?set SUPABASE_URL}"
-: "${SUPABASE_SERVICE_ROLE_KEY:?set SUPABASE_SERVICE_ROLE_KEY}"
+: "${SUPABASE_SECRET_KEY:?set SUPABASE_SECRET_KEY}"
 : "${FRONTEND_ORIGIN:?set FRONTEND_ORIGIN}"
 : "${OPENROUTER_API_KEY:?set OPENROUTER_API_KEY}"
 SUPABASE_URL="${SUPABASE_URL%/}"
@@ -78,14 +78,14 @@ fly secrets set --app "$APP" --stage \
 info "deploying $APP"
 fly deploy --app "$APP" --config infra/fly.toml --remote-only
 
-# 5. Record the backend URL for the frontend (service-role write bypasses RLS) -
+# 5. Record the backend URL for the frontend (secret-key write bypasses RLS) ---
 BACKEND_URL="https://$APP.fly.dev"
 info "recording backend URL $BACKEND_URL in Supabase"
 HTTP_CODE=$(curl -sS -o /tmp/provision-upsert.json -w '%{http_code}' \
   "$SUPABASE_URL/rest/v1/user_backends?on_conflict=user_id" \
   -X POST \
-  -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
-  -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+  -H "apikey: $SUPABASE_SECRET_KEY" \
+  -H "Authorization: Bearer $SUPABASE_SECRET_KEY" \
   -H "Content-Type: application/json" \
   -H "Prefer: resolution=merge-duplicates" \
   -d "{\"user_id\":\"$USER_ID\",\"backend_url\":\"$BACKEND_URL\",\"machine_id\":\"$APP\"}")

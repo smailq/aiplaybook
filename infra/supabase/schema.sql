@@ -3,7 +3,7 @@
 -- Maps each authenticated user to their own Fly-hosted backend URL. RLS ensures
 -- a user can read only their own row (the browser holds only the user's own
 -- short-lived token). Writes are done by the provisioning script using the
--- service-role key, which bypasses RLS.
+-- Supabase secret key, which bypasses RLS.
 --
 -- Apply via: Supabase Studio -> SQL editor -> paste + run,
 -- or:        psql "$SUPABASE_DB_URL" -f infra/supabase/schema.sql
@@ -25,4 +25,4 @@ create policy "read own backend"
   using (auth.uid() = user_id);
 
 -- No insert/update/delete policies are defined, so the anon and authenticated
--- roles cannot write. Provisioning uses the service-role key, which bypasses RLS.
+-- roles cannot write. Provisioning uses the Supabase secret key, which bypasses RLS.
