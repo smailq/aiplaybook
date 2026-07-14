@@ -1,6 +1,4 @@
-# Positioning (v0 - draft)
-
-> Status: first draft, unverified. This page will be rewritten as messaging tests return data.
+> Status: first draft, unverified. This section will be rewritten as messaging tests return data.
 
 **Product:** Awareness3, a local-first macOS app that reads the documents, bills, receipts, and emails you drop in, files them for you, and reminds you about what actually needs doing.
 

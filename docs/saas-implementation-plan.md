@@ -252,6 +252,6 @@ Not legal advice: have counsel review the trademark, dependency, and (if we touc
 ## 11. What we already have that feeds this
 
 - The per-agent isolation model, seeding mechanism, and lifecycle commands (`hermesctl`) are the local reference for server-side provisioning; the same `SOUL.md` + `knowledge/` + volume mechanics apply on Fly.
-- The marketing vertical's persona and knowledge brief are already drafted (`docs/hermes-marketing-agent-prompt.md`, `docs/awareness3-product-brief.md`) - they become the first vertical bundle.
+- The marketing vertical's persona and knowledge brief are the first vertical bundle (`verticals/saas-marketing/`: `seed/SOUL.md`, `seed/knowledge/awareness3-product-brief.md`, plus `onboarding.json` and `skills/`).
   Follow-up (detailed implementation): reframe that operating prompt so the agent authors the playbook (chapters + per-section versions) openly, alongside the human expert and the customer, rather than emitting freeform proposals.
 - The `awareness3` codebase already uses Next.js + Supabase + Stripe-adjacent patterns, so the web app stack is familiar to the team.

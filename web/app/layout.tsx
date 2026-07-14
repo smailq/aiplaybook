@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "AI Playbook",
-  description: "Your living playbook, co-authored in the open.",
+  description: "Your living playbook - the marketing plan that turns into customers.",
 };
 
 export default function RootLayout({

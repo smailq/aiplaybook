@@ -108,13 +108,13 @@ const { data: { session } } = await supabase.auth.getSession()
 const { data: row } = await supabase
   .from('user_backends').select('backend_url').single()      // RLS returns only my row
 
-const res = await fetch(`${row.backend_url}/playbook`, {
+const res = await fetch(`${row.backend_url}/book`, {
   headers: { Authorization: `Bearer ${session.access_token}` },
 })
 ```
 
 - Minimal UI (enough to prove the round-trip):
-  - **Playbook view** - render the markdown the agent has written (from `GET /playbook`).
+  - **Book view** - render the book the agent has written (from `GET /book`), with a table-of-contents sidebar and a reading pane (see `docs/book-format.md`).
   - **Ask box** - a text field that `POST`s a prompt to the backend and shows the reply.
 
 ### 4.3 Backend (per-user Fly Machine)
@@ -135,8 +135,8 @@ EXPOSE 8787
 ```
 
 - **Gateway** (`/opt/gateway`, Node + Hono + jose): CORS locked to the frontend origin; the `requireUser` check above on every request; then:
-  - `GET /playbook` - read the markdown files under `/opt/data/awareness3/**` from the volume and return them (proves an authed data read).
-  - `POST /ask` - run the agent and return the reply (proves an authed agent invocation).
+  - `GET /book` - read the book (`metadata.json` + `chapter/section/content.md`) under `/opt/data/book` from the volume and return the assembled TOC + content (proves an authed data read); see `docs/book-format.md`.
+  - `POST /ask` + `GET /ask/:id` - start an agent turn and poll it (proves an authed agent invocation). A turn can run for minutes and may edit the book, so it is async: `POST` returns a job id, the client polls until `done`/`error`.
   - `GET /health` - unauthenticated liveness.
 - **Agent invocation - two options**:
   - First cut (lowest risk): `/ask` shells out to `hermes -z "<prompt>" --usage-file /tmp/u.json`, which we have already validated end to end; the usage file is just logged for a sanity check (no meter in Phase 0). Simple, but a cold run per request.
@@ -169,10 +169,10 @@ curl -s "$SUPABASE_URL/rest/v1/user_backends" -H "apikey: $SERVICE_ROLE" \
 ## 5. Build order
 
 1. **Supabase**: project, magic-link auth, asymmetric JWT keys, `user_backends` table + RLS.
-2. **Gateway, locally**: verify a real Supabase JWT, enforce `sub`, serve `/playbook` + `/ask` against a local Hermes. Test it against Apple `container` first (reuse `hermesctl` - the local dev harness), before Fly.
+2. **Gateway, locally**: verify a real Supabase JWT, enforce `sub`, serve `/book` + `/ask` against a local Hermes. Test it against Apple `container` first (reuse `hermesctl` - the local dev harness), before Fly.
 3. **Extension image**: bundle the gateway as an s6 sidecar; confirm both the gateway (public port) and Hermes (loopback) run in one container locally.
 4. **Fly, one user**: `provision.sh` for a single test user; get the URL; seed the volume; insert the `user_backends` row.
-5. **Frontend**: `/login` (magic link) → `/app` reads `backend_url` → calls `/playbook` and `/ask`, renders results.
+5. **Frontend**: `/login` (magic link) → `/app` reads `backend_url` → calls `/book` and `/ask`, renders the book with a TOC + reading pane.
 6. **Verify end to end** (exit criteria below).
 
 ## 6. Per-user URL strategy

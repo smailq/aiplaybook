@@ -3,7 +3,7 @@
  *
  * Public surface of a per-user backend. Every route except /health is
  * JWT-verified and scoped to this machine's user. On success it reads the
- * user's playbook off the volume or runs their agent - Hermes itself never
+ * user's book off the volume or runs their agent - Hermes itself never
  * leaves loopback.
  */
 import { Hono, type MiddlewareHandler } from "hono";
@@ -12,7 +12,8 @@ import type { JWTPayload, JWTVerifyGetKey } from "jose";
 import { AuthError, requireUser } from "./auth.js";
 import type { Config } from "./config.js";
 import type { HermesRunner } from "./hermes.js";
-import { readPlaybook } from "./playbook.js";
+import { BookError, readBook, readSection } from "./book.js";
+import { createJobStore } from "./jobs.js";
 
 export interface AppDeps {
   config: Config;
@@ -64,17 +65,52 @@ export function createApp({ config, jwks, hermes }: AppDeps): Hono<Env> {
     }
   };
 
-  // Auth guard applied to everything below.
-  app.use("/playbook", authGuard);
-  app.use("/ask", authGuard);
+  // Async agent turns: POST /ask starts a job, GET /ask/:id polls it.
+  const jobs = createJobStore();
 
-  // Authenticated read of the user's own playbook.
-  app.get("/playbook", async (c) => {
-    const playbook = await readPlaybook(config.playbookDir);
-    return c.json(playbook);
+  // Auth guard applied to everything below.
+  app.use("/book", authGuard);
+  app.use("/book/*", authGuard);
+  app.use("/ask", authGuard);
+  app.use("/ask/*", authGuard);
+
+  // Authenticated read of the user's own book: the full TOC with each section's
+  // markdown inlined, in metadata order. A malformed/missing book on the volume is
+  // a 500 with a clear message (not a blank 200), so a bad seed is debuggable.
+  app.get("/book", async (c) => {
+    try {
+      return c.json(await readBook(config.bookDir));
+    } catch (err) {
+      if (err instanceof BookError) {
+        console.error(`[gateway] invalid book at ${config.bookDir}:`, err.errors);
+        return c.json({ error: err.message, details: err.errors }, 500);
+      }
+      throw err;
+    }
   });
 
-  // Authenticated agent turn.
+  // Authenticated read of a single section (deep links / future lazy loading).
+  app.get("/book/:chapter/:section", async (c) => {
+    try {
+      const section = await readSection(
+        config.bookDir,
+        c.req.param("chapter"),
+        c.req.param("section"),
+      );
+      if (!section) return c.json({ error: "section not found" }, 404);
+      return c.json(section);
+    } catch (err) {
+      if (err instanceof BookError) {
+        console.error(`[gateway] invalid book at ${config.bookDir}:`, err.errors);
+        return c.json({ error: err.message, details: err.errors }, 500);
+      }
+      throw err;
+    }
+  });
+
+  // Start an agent turn. Returns 202 with a job id immediately; the turn runs in
+  // the background (it can take minutes and may edit the book on the volume), and
+  // the client polls GET /ask/:id for the result.
   app.post("/ask", async (c) => {
     let body: unknown;
     try {
@@ -87,8 +123,19 @@ export function createApp({ config, jwks, hermes }: AppDeps): Hono<Env> {
       return c.json({ error: "field 'prompt' (non-empty string) is required" }, 400);
     }
 
-    const result = await hermes.ask(prompt);
-    return c.json({ reply: result.reply });
+    const id = jobs.start(async () => (await hermes.ask(prompt)).reply);
+    return c.json({ id }, 202);
+  });
+
+  // Poll an agent turn. `running` while in flight; then `done` with the reply or
+  // `error`. A 404 means the id is unknown (never started, or pruned after TTL).
+  app.get("/ask/:id", (c) => {
+    const job = jobs.get(c.req.param("id"));
+    if (!job) return c.json({ error: "job not found" }, 404);
+    // The poll itself succeeded (200); the job's own outcome is in the body.
+    if (job.status === "done") return c.json({ status: "done", reply: job.reply });
+    if (job.status === "error") return c.json({ status: "error", error: job.error });
+    return c.json({ status: "running" });
   });
 
   return app;

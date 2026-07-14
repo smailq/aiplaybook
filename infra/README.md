@@ -72,7 +72,7 @@ shell wins over the file, so you can override ad hoc:
 `HERMES_MODEL=... infra/provision.sh alice <id>`.
 
 This creates `hermes-alice` on Fly (app + 3GB volume), generates `infra/machine_config.json` with the per-user config, deploys the image (Fly's remote builder builds `backend/image/Dockerfile`) as a multi-container machine, and upserts the user's `backend_url` into Supabase.
-The image self-seeds the persona (`SOUL.md`), knowledge, and the starter playbook into the volume on first boot.
+The image self-seeds the persona (`SOUL.md`), knowledge, and the starter book into the volume on first boot.
 
 The backend runs as a **multi-container machine** so the Hermes image's s6-overlay init gets PID 1 in its own namespace (per Fly's Hermes blueprint).
 Because Fly does not inject app secrets into an explicitly-configured container, the gateway's config - including the OpenRouter key - is passed as the container's `env` in the generated (gitignored) `machine_config.json`.
@@ -82,7 +82,7 @@ That key is therefore visible in the Fly machine config to the app owner; keep t
 
 ```bash
 curl https://hermes-alice.fly.dev/health          # -> {"ok":true}
-curl -i https://hermes-alice.fly.dev/playbook      # -> 401 (no token)
+curl -i https://hermes-alice.fly.dev/book          # -> 401 (no token)
 ```
 
 Then, as the tester: open the frontend, sign in with the magic link, and land on `/app`.
@@ -100,4 +100,4 @@ Exit criteria (from `docs/phase-0-plan.md` §8):
 - `supabase/schema.sql` - the `user_backends` table + RLS.
 - `fly.toml` - shared Fly config for every per-user app.
 - `provision.sh` - stand up one user's backend.
-- `seed/playbook/` - the starter playbook baked into the image.
+- `seed/book/` - the starter book (`metadata.json` + chapters/sections) baked into the image; see `docs/book-format.md`.

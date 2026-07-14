@@ -16,6 +16,7 @@ const hermes = createHermesRunner({
   hermesHome: config.hermesHome,
   provider: config.hermesProvider,
   model: config.hermesModel,
+  timeoutMs: config.hermesTimeoutMs,
 });
 
 const app = createApp({ config, jwks, hermes });
