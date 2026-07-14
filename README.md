@@ -22,16 +22,21 @@ To stand it up, follow `infra/README.md` (accounts, Supabase, and provisioning a
 ## Repo layout (current + intended)
 
 ```
-docs/                         plans + the first vertical's content
+docs/                         plans + book/bundle formats
   saas-implementation-plan.md   the master plan
   phase-0-plan.md               the Phase 0 walking skeleton (build this first)
-  hermes-marketing-agent-prompt.md   marketing vertical: the agent's operating prompt (SOUL)
-  awareness3-product-brief.md        marketing vertical: an example customer brief
+  book-format.md                the on-disk book data model (metadata.json + chapters)
+verticals/                    vertical bundles: the productized playbook knowhow
+  saas-marketing/             the first vertical (SaaS Marketing Playbook)
+    bundle.json                 product/catalog metadata + status
+    onboarding.json             onboarding question schema
+    skills/                     vertical-specific Hermes skills
+    seed/                       SOUL.md, AGENTS.md, knowledge/, book/ (baked into the image)
 tools/
   hermesctl                   local dev harness: run/seed Hermes agents in Apple `container`
                               (the reference for how the cloud backend provisions + seeds an agent)
 
-web/                          Next.js + Supabase frontend (magic-link login -> playbook + ask)
+web/                          Next.js + Supabase frontend (landing + library + magic-link login -> book + ask)
 backend/
   gateway/                    auth gateway (Node + Hono + jose): verifies the Supabase JWT, proxies to Hermes
   image/                      Dockerfile extending nousresearch/hermes-agent + s6 sidecar wiring + first-boot seed
@@ -40,7 +45,6 @@ infra/
   supabase/schema.sql         user_backends table + RLS
   provision.sh                stand up one per-user Fly backend
   fly.toml                    shared Fly config for every per-user app
-  seed/playbook/              starter playbook baked into the image
 ```
 
 ## Phase 0 stack (the walking skeleton)

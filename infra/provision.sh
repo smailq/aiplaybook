@@ -5,7 +5,7 @@
 # Phase 0 is a script, not a control plane: a human runs this once per tester.
 # It creates the Fly app + volume, sets the per-user secrets, deploys the
 # gateway+Hermes image, and records the backend URL in Supabase so the frontend
-# can find it. The image self-seeds the persona + starter playbook on first boot
+# can find it. The image self-seeds the persona + starter book on first boot
 # (see backend/image/seed.sh), so there is no separate volume-seeding step.
 #
 # Usage (run from the repo root):

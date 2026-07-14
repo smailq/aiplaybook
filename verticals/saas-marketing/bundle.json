@@ -1,0 +1,18 @@
+{
+  "id": "saas-marketing",
+  "title": "SaaS Marketing Playbook",
+  "tagline": "A living go-to-market plan for your SaaS - authored by AI, edited by marketing experts, and revised as results come in.",
+  "status": "in-development",
+  "northStar": "qualified signups that activate",
+  "cover": {
+    "color": "#2f4a3f",
+    "accent": "#c9a24b"
+  },
+  "whatToExpect": [
+    "A positioning chapter that nails who it is for and the one-sentence promise.",
+    "A channel and messaging roadmap, prioritized by expected impact on your north-star metric.",
+    "Ready-to-run experiment cards with pre-registered win/lose thresholds, and draft copy marked for your review.",
+    "An evidence log so every recommendation traces back to research or a real result.",
+    "Sections that are versioned like software releases and sharpen as you report what happened."
+  ]
+}

@@ -20,8 +20,8 @@ export interface Config {
   hermesUserId: string;
   /** Browser origin allowed by CORS (the deployed frontend). */
   frontendOrigin: string;
-  /** Directory on the Hermes volume holding the user's playbook markdown. */
-  playbookDir: string;
+  /** Directory on the Hermes volume holding the user's book (metadata.json + chapters). */
+  bookDir: string;
   /** Path to the `hermes` CLI used to run the agent. */
   hermesBin: string;
   /** Working dir for the hermes CLI (its HERMES_HOME). */
@@ -30,6 +30,8 @@ export interface Config {
   hermesProvider: string;
   /** Optional model id passed to `hermes -z -m`; empty = use the agent's config default. */
   hermesModel: string;
+  /** Hard cap on a single agent turn, in ms. Turns run async now, so this is generous. */
+  hermesTimeoutMs: number;
 }
 
 function required(name: string): string {
@@ -57,10 +59,11 @@ export function loadConfig(): Config {
     ),
     hermesUserId: required("HERMES_USER_ID"),
     frontendOrigin: required("FRONTEND_ORIGIN"),
-    playbookDir: optional("PLAYBOOK_DIR", "/opt/data/awareness3"),
+    bookDir: optional("BOOK_DIR", "/opt/data/book"),
     hermesBin: optional("HERMES_BIN", "hermes"),
     hermesHome: optional("HERMES_HOME", "/opt/data"),
     hermesProvider: optional("HERMES_PROVIDER", "openrouter"),
     hermesModel: optional("HERMES_MODEL", ""),
+    hermesTimeoutMs: Number(optional("HERMES_TIMEOUT_MS", "600000")),
   };
 }

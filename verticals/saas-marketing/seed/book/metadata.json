@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "title": "Your Marketing Playbook",
+  "chapters": [
+    {
+      "slug": "chapter-1",
+      "title": "Getting Started",
+      "sections": [
+        {
+          "slug": "section-1",
+          "title": "Welcome",
+          "summary": "What this living playbook is and who writes it.",
+          "status": "published"
+        },
+        {
+          "slug": "section-2",
+          "title": "How to Use This Book",
+          "summary": "The read, run, report loop and the north-star metric.",
+          "status": "published"
+        }
+      ]
+    },
+    {
+      "slug": "chapter-2",
+      "title": "Positioning",
+      "sections": [
+        {
+          "slug": "section-1",
+          "title": "Positioning (v0 - Draft)",
+          "summary": "First-draft product positioning, to be rewritten as tests return data.",
+          "status": "draft"
+        }
+      ]
+    }
+  ]
+}

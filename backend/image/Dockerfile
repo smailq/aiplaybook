@@ -26,12 +26,16 @@ COPY backend/gateway/package.json backend/gateway/package-lock.json /opt/gateway
 RUN cd /opt/gateway && npm ci --omit=dev && npm cache clean --force
 COPY --from=gateway-build /build/dist /opt/gateway/dist
 
-# Bake the vertical seed: persona -> SOUL.md, product brief -> knowledge, and
-# the starter playbook. The gateway self-seeds these into the volume on first
-# boot (see backend/image/seed.sh), never overwriting existing files.
-COPY docs/hermes-marketing-agent-prompt.md /opt/playbook-seed/SOUL.md
-COPY docs/awareness3-product-brief.md /opt/playbook-seed/knowledge/awareness3-product-brief.md
-COPY infra/seed/playbook /opt/playbook-seed/awareness3
+# Bake the vertical bundle's seed: persona -> SOUL.md, operating instructions ->
+# AGENTS.md, product brief -> knowledge, the starter book, and the vertical's
+# Hermes skills. The gateway self-seeds these into the volume on first boot (see
+# backend/image/seed.sh), never overwriting existing files. Source of truth is the
+# vertical bundle (see verticals/saas-marketing/README.md).
+COPY verticals/saas-marketing/seed/SOUL.md /opt/playbook-seed/SOUL.md
+COPY verticals/saas-marketing/seed/AGENTS.md /opt/playbook-seed/AGENTS.md
+COPY verticals/saas-marketing/seed/knowledge /opt/playbook-seed/knowledge
+COPY verticals/saas-marketing/seed/book /opt/playbook-seed/book
+COPY verticals/saas-marketing/skills /opt/playbook-seed/skills
 COPY backend/image/seed.sh /opt/gateway/seed.sh
 
 # Register the gateway as an s6 longrun service in the existing "user" bundle.

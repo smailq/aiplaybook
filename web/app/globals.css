@@ -32,6 +32,101 @@ body {
   padding: 2rem;
 }
 
+/* Landing page */
+.landing {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 5rem 1.5rem 3rem;
+}
+
+.hero {
+  text-align: center;
+  padding-bottom: 3.5rem;
+  border-bottom: 1px solid var(--paper-edge);
+}
+
+.hero h1 {
+  font-size: clamp(2rem, 5vw, 3.1rem);
+  line-height: 1.12;
+  margin: 0.6rem auto 1.2rem;
+  max-width: 16ch;
+}
+
+.lede {
+  font-size: 1.15rem;
+  color: var(--muted);
+  max-width: 54ch;
+  margin: 0 auto 2rem;
+}
+
+.cta-row {
+  display: flex;
+  gap: 0.9rem;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.cta {
+  display: inline-block;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #fff;
+  background: var(--accent);
+  border-radius: 8px;
+  padding: 0.8rem 1.4rem;
+  text-decoration: none;
+}
+
+.cta:hover {
+  filter: brightness(0.95);
+}
+
+.cta-secondary {
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.cta-secondary:hover {
+  text-decoration: underline;
+}
+
+.features {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+  padding: 3.5rem 0;
+}
+
+.feature h2 {
+  font-size: 1.15rem;
+  margin: 0 0 0.5rem;
+}
+
+.feature p {
+  color: var(--muted);
+  margin: 0;
+}
+
+.landing-foot {
+  text-align: center;
+  border-top: 1px solid var(--paper-edge);
+  padding-top: 2rem;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.85rem;
+}
+
+@media (max-width: 640px) {
+  .features {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+}
+
 .card {
   width: 100%;
   max-width: 420px;
@@ -42,19 +137,483 @@ body {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
-.book {
-  max-width: 720px;
+/* ---- Library: bookshelf + book cover + detail ---------------------------- */
+
+.shelf {
+  max-width: 960px;
   margin: 0 auto;
-  padding: 2.5rem 1.5rem 6rem;
+  padding: 3.5rem 1.5rem 4rem;
 }
 
-.book-header {
+.shelf-head {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.shelf-head h1 {
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  margin: 0.5rem 0 1rem;
+}
+
+.shelf-head .cta-secondary {
+  display: inline-block;
+  margin-bottom: 1.5rem;
+}
+
+.shelf-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 2.5rem 2rem;
+  justify-items: center;
+  /* the shelf line the books stand on */
+  border-bottom: none;
+}
+
+.shelf-item {
   display: flex;
-  justify-content: space-between;
-  align-items: baseline;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.9rem;
+  text-decoration: none;
+  color: var(--ink);
+  padding-bottom: 1rem;
+  border-bottom: 3px solid var(--paper-edge);
+  transition: transform 0.15s ease;
+}
+
+.shelf-item:hover {
+  transform: translateY(-4px);
+}
+
+.shelf-item-title {
+  font-size: 1rem;
+  font-weight: 600;
+  text-align: center;
+  max-width: 15ch;
+}
+
+/* CSS book cover */
+.book-cover {
+  --cover: #33413a;
+  --cover-accent: #c9a24b;
+  position: relative;
+  width: 168px;
+  height: 236px;
+  border-radius: 3px 7px 7px 3px;
+  background: linear-gradient(135deg, var(--cover), color-mix(in srgb, var(--cover) 78%, #000));
+  box-shadow:
+    0 10px 22px rgba(0, 0, 0, 0.22),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  color: #fff;
+  overflow: hidden;
+}
+
+.book-cover.lg {
+  width: 220px;
+  height: 310px;
+}
+
+/* the spine highlight down the left edge */
+.book-cover-spine {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 12px;
+  height: 100%;
+  background: linear-gradient(
+    to right,
+    rgba(0, 0, 0, 0.28),
+    rgba(255, 255, 255, 0.1) 55%,
+    rgba(0, 0, 0, 0.12)
+  );
+}
+
+.book-cover-face {
+  position: absolute;
+  inset: 0;
+  padding: 1.6rem 1.2rem 1.2rem 1.6rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.book-cover-imprint {
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.58rem;
+  color: var(--cover-accent);
+}
+
+.book-cover-title {
+  margin-top: 0.9rem;
+  font-size: 1.25rem;
+  line-height: 1.2;
+  font-weight: 600;
+}
+
+.book-cover.lg .book-cover-title {
+  font-size: 1.55rem;
+}
+
+.book-cover-rule {
+  margin-top: auto;
+  width: 34px;
+  height: 3px;
+  background: var(--cover-accent);
+  border-radius: 2px;
+}
+
+.book-cover-ribbon {
+  position: absolute;
+  top: 14px;
+  right: -34px;
+  transform: rotate(45deg);
+  background: var(--cover-accent);
+  color: #1f1b16;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.2rem 2.4rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+/* Book detail page */
+.book-detail {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 5rem;
+}
+
+.detail-back {
+  display: inline-block;
+  margin-bottom: 2rem;
+}
+
+.detail-top {
+  display: flex;
+  gap: 2.5rem;
+  align-items: flex-start;
+  padding-bottom: 2.5rem;
+  border-bottom: 1px solid var(--paper-edge);
+}
+
+.detail-head {
+  flex: 1;
+  min-width: 0;
+}
+
+.detail-head h1 {
+  font-size: clamp(1.7rem, 4vw, 2.4rem);
+  margin: 0.6rem 0 0.8rem;
+}
+
+.detail-head .cta {
+  margin-top: 0.6rem;
+}
+
+.status-badge {
+  display: inline-block;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+}
+
+.status-badge.dev {
+  color: #7a5b12;
+  background: #f5ead0;
+  border: 1px solid #e6d4a8;
+}
+
+.status-badge.on {
+  color: #1f5130;
+  background: #d9efdf;
+  border: 1px solid #bcdcc6;
+}
+
+.detail-section {
+  padding-top: 2rem;
+}
+
+.detail-section h2 {
+  font-size: 1.25rem;
+  margin: 0 0 0.9rem;
+}
+
+.detail-list {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.detail-list li {
+  margin-bottom: 0.6rem;
+}
+
+@media (max-width: 560px) {
+  .detail-top {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+}
+
+/* Book layout: a table-of-contents sidebar, the reading column, and the chat. */
+.book-shell {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr) 360px;
+  min-height: 100vh;
+}
+
+.toc {
+  border-right: 1px solid var(--paper-edge);
+  padding: 2rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  position: sticky;
+  top: 0;
+  align-self: start;
+  height: 100vh;
+  overflow-y: auto;
+  background: #fffdf9;
+}
+
+.toc-head {
   border-bottom: 1px solid var(--paper-edge);
   padding-bottom: 1rem;
-  margin-bottom: 2rem;
+}
+
+.toc-title {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 1.05rem;
+  line-height: 1.3;
+}
+
+.toc nav {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.toc-chapter-title {
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.68rem;
+  color: var(--muted);
+  margin: 0 0 0.5rem;
+}
+
+.toc-chapter ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.toc-link {
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  color: var(--ink);
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-weight: 400;
+  font-size: 0.92rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.toc-link:hover {
+  background: var(--paper-edge);
+}
+
+.toc-link.active {
+  background: var(--paper-edge);
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.tag {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  border: 1px solid var(--paper-edge);
+  border-radius: 999px;
+  padding: 0.05rem 0.4rem;
+}
+
+.toc-signout {
+  margin-top: auto;
+  text-align: left;
+}
+
+.reader {
+  max-width: 720px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 3rem 2rem 6rem;
+}
+
+/* Chat: a sticky full-height column with a scrolling transcript and a pinned
+   composer. Turns are async, so the composer stays usable while one is running. */
+.chat {
+  border-left: 1px solid var(--paper-edge);
+  background: #fffdf9;
+  position: sticky;
+  top: 0;
+  align-self: start;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.5rem 1.25rem;
+}
+
+.chat-head {
+  border-bottom: 1px solid var(--paper-edge);
+  padding-bottom: 0.75rem;
+}
+
+.chat-hint {
+  display: block;
+  font-size: 0.72rem;
+  margin-top: 0.25rem;
+}
+
+.chat-log {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.chat-empty {
+  font-size: 0.85rem;
+}
+
+.bubble {
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  padding: 0.6rem 0.8rem;
+  border-radius: 10px;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.bubble.you {
+  background: var(--accent);
+  color: #fff;
+  align-self: flex-end;
+  border-bottom-right-radius: 3px;
+}
+
+.bubble.author {
+  background: #fff;
+  border: 1px solid var(--paper-edge);
+  align-self: flex-start;
+  border-bottom-left-radius: 3px;
+}
+
+.bubble.error {
+  background: #fdecea;
+  color: var(--danger);
+  border: 1px solid #f5c6c2;
+  align-self: flex-start;
+}
+
+.bubble.author :is(p, ul, ol, h1, h2, h3) {
+  margin: 0.4rem 0;
+}
+
+.bubble.author > :first-child {
+  margin-top: 0;
+}
+
+.bubble.author > :last-child {
+  margin-bottom: 0;
+}
+
+.thinking {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--muted);
+  animation: blink 1.4s infinite both;
+}
+
+.dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes blink {
+  0%,
+  80%,
+  100% {
+    opacity: 0.2;
+  }
+  40% {
+    opacity: 1;
+  }
+}
+
+.chat-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.chat-form textarea {
+  resize: none;
+}
+
+/* Below 1024px, stack the three columns into one scrolling page. */
+@media (max-width: 1024px) {
+  .book-shell {
+    grid-template-columns: 1fr;
+  }
+  .toc,
+  .chat {
+    position: static;
+    height: auto;
+    border-right: none;
+    border-left: none;
+    border-bottom: 1px solid var(--paper-edge);
+  }
+  .chat-log {
+    max-height: 50vh;
+  }
+  .toc-signout {
+    margin-top: 1rem;
+  }
 }
 
 .eyebrow {
@@ -137,26 +696,4 @@ button:disabled {
   cursor: pointer;
   padding: 0;
   font-size: 0.85rem;
-}
-
-.ask {
-  position: sticky;
-  bottom: 0;
-  background: linear-gradient(transparent, var(--paper) 22%);
-  padding-top: 2rem;
-}
-
-.ask-row {
-  display: flex;
-  gap: 0.6rem;
-  align-items: flex-end;
-}
-
-.reply {
-  margin-top: 1rem;
-  background: #fff;
-  border: 1px solid var(--paper-edge);
-  border-radius: 8px;
-  padding: 1rem 1.2rem;
-  white-space: pre-wrap;
 }

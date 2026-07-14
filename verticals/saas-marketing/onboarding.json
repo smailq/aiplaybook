@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "intro": "A few questions so the author can write the first edition around your business. You can revise any answer later - the book adapts.",
+  "questions": [
+    {
+      "id": "product_name",
+      "label": "What is your product called?",
+      "type": "text",
+      "required": true
+    },
+    {
+      "id": "one_liner",
+      "label": "Describe what it does in one sentence.",
+      "type": "textarea",
+      "required": true
+    },
+    {
+      "id": "audience",
+      "label": "Who is it for today - the sharpest description you have?",
+      "type": "textarea",
+      "required": true
+    },
+    {
+      "id": "stage",
+      "label": "What stage are you at?",
+      "type": "select",
+      "options": [
+        "Pre-launch / waitlist",
+        "Private beta",
+        "Public, early revenue",
+        "Scaling revenue"
+      ],
+      "required": true
+    },
+    {
+      "id": "north_star",
+      "label": "What is the one metric that matters most right now?",
+      "type": "text",
+      "required": true
+    },
+    {
+      "id": "channels_tried",
+      "label": "Which channels have you tried, and how did they go?",
+      "type": "textarea",
+      "required": false
+    },
+    {
+      "id": "url",
+      "label": "Landing page or site URL (optional).",
+      "type": "url",
+      "required": false
+    }
+  ]
+}

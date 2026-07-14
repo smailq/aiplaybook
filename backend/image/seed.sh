@@ -1,7 +1,7 @@
 #!/bin/sh
 # First-boot seed for a user's Hermes volume.
 #
-# Installs the vertical's persona (SOUL.md), knowledge, and the starter playbook
+# Installs the vertical's persona (SOUL.md), knowledge, and the starter book
 # into /opt/data if - and only if - they are not already present. It is
 # idempotent and never overwrites, so a user's edits and the agent's curated
 # memory survive every redeploy. Runs as the hermes user (invoked via
@@ -19,14 +19,27 @@ if [ -f "$SEED/SOUL.md" ] && [ ! -f "$DATA/SOUL.md" ]; then
     echo "[seed] installed SOUL.md"
 fi
 
+# Operating instructions -> AGENTS.md (auto-injected every message): how to read
+# and edit the book on the volume, and how to validate it.
+if [ -f "$SEED/AGENTS.md" ] && [ ! -f "$DATA/AGENTS.md" ]; then
+    cp "$SEED/AGENTS.md" "$DATA/AGENTS.md"
+    echo "[seed] installed AGENTS.md"
+fi
+
 # Reference knowledge the agent can read and curate into memory.
 if [ -d "$SEED/knowledge" ] && [ ! -d "$DATA/knowledge" ]; then
     cp -r "$SEED/knowledge" "$DATA/knowledge"
     echo "[seed] installed knowledge/"
 fi
 
-# The starter playbook served by GET /playbook.
-if [ -d "$SEED/awareness3" ] && [ ! -d "$DATA/awareness3" ]; then
-    cp -r "$SEED/awareness3" "$DATA/awareness3"
-    echo "[seed] installed awareness3/ playbook"
+# The starter book (metadata.json + chapters/sections) served by GET /book.
+if [ -d "$SEED/book" ] && [ ! -d "$DATA/book" ]; then
+    cp -r "$SEED/book" "$DATA/book"
+    echo "[seed] installed book/"
+fi
+
+# The vertical's Hermes skills (repeatable routines the agent can invoke).
+if [ -d "$SEED/skills" ] && [ ! -d "$DATA/skills" ]; then
+    cp -r "$SEED/skills" "$DATA/skills"
+    echo "[seed] installed skills/"
 fi
